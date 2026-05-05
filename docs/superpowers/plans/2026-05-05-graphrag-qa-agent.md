@@ -2762,7 +2762,7 @@ git commit -m "feat(activities): add expand_graph activity"
 **Files:**
 - Create: `src/qa_agent/activities/rerank.py`
 
-- [ ] **Step 1: Implement the activity**
+- [x] **Step 1: Implement the activity**
 
 `src/qa_agent/activities/rerank.py`:
 
@@ -2810,12 +2810,12 @@ async def rerank(req: RerankRequest) -> list[Candidate]:
             raise
 ```
 
-- [ ] **Step 2: Smoke import**
+- [x] **Step 2: Smoke import**
 
 Run: `python -c "from qa_agent.activities.rerank import rerank; print(rerank.__name__)"`
 Expected: prints `rerank`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/qa_agent/activities/rerank.py
