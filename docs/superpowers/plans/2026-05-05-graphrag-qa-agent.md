@@ -2714,7 +2714,7 @@ git commit -m "feat(activities): add hybrid_search and naive_hybrid_fallback"
 **Files:**
 - Create: `src/qa_agent/activities/expand.py`
 
-- [ ] **Step 1: Implement the activity**
+- [x] **Step 1: Implement the activity**
 
 `src/qa_agent/activities/expand.py`:
 
@@ -2743,12 +2743,12 @@ async def expand_graph(req: ExpandRequest) -> list[Candidate]:
         return result
 ```
 
-- [ ] **Step 2: Smoke import**
+- [x] **Step 2: Smoke import**
 
 Run: `python -c "from qa_agent.activities.expand import expand_graph; print(expand_graph.__name__)"`
 Expected: prints `expand_graph`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/qa_agent/activities/expand.py
