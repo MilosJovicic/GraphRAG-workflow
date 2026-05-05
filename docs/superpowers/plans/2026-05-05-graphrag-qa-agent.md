@@ -2521,7 +2521,7 @@ git commit -m "feat(agents): add answerer agent with citation extraction and val
 **Files:**
 - Create: `src/qa_agent/activities/plan.py`
 
-- [ ] **Step 1: Implement the activity**
+- [x] **Step 1: Implement the activity**
 
 `src/qa_agent/activities/plan.py`:
 
@@ -2550,12 +2550,12 @@ async def plan_query(question: str) -> Plan:
             ) from e
 ```
 
-- [ ] **Step 2: Smoke import**
+- [x] **Step 2: Smoke import**
 
 Run: `python -c "from qa_agent.activities.plan import plan_query; print(plan_query.__name__)"`
 Expected: prints `plan_query`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/qa_agent/activities/plan.py
