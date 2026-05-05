@@ -1454,7 +1454,7 @@ git commit -m "feat(neo4j): add run_cypher helper and FileNotFoundError on missi
 - Create: `src/qa_agent/embeddings.py`
 - Test: `tests/test_embeddings.py`
 
-- [ ] **Step 1: Write the failing test (mock the OpenAI client)**
+- [x] **Step 1: Write the failing test (mock the OpenAI client)**
 
 `tests/test_embeddings.py`:
 
@@ -1510,12 +1510,12 @@ async def test_embed_batch_returns_one_vector_per_input(monkeypatch):
     assert vs[2] == [2.0, 2.0, 2.0, 2.0]
 ```
 
-- [ ] **Step 2: Run test, confirm failure**
+- [x] **Step 2: Run test, confirm failure**
 
 Run: `pytest tests/test_embeddings.py -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement embeddings.py**
+- [x] **Step 3: Implement embeddings.py**
 
 `src/qa_agent/embeddings.py`:
 
@@ -1552,12 +1552,12 @@ async def embed_batch(texts: list[str]) -> list[list[float]]:
     return [by_index[i] for i in range(len(texts))]
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `pytest tests/test_embeddings.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/qa_agent/embeddings.py tests/test_embeddings.py
