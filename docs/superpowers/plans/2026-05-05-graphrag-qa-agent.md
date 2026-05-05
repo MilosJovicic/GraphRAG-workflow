@@ -3481,7 +3481,7 @@ git commit -m "feat(api): add Flask /ask and /health endpoints"
 **Files:**
 - Create: `tests/fixtures/eval_questions.yaml`
 
-- [ ] **Step 1: Add ~7 hand-curated questions tied to expected node IDs**
+- [x] **Step 1: Add ~7 hand-curated questions tied to expected node IDs**
 
 The exact node IDs must be confirmed against the local graph. Use the placeholder format below; the engineer running this task fills in real IDs by querying the graph (one Cypher query per question). For example:
 
@@ -3539,11 +3539,11 @@ MATCH (s:Section) WHERE s.text CONTAINS 'permission mode' RETURN s.id LIMIT 5;
     - "<provider-id-bedrock>"
 ```
 
-- [ ] **Step 2: Resolve placeholder IDs against the local graph**
+- [x] **Step 2: Resolve placeholder IDs against the local graph**
 
 For each entry, run a small Cypher query to find a real node id and replace the placeholder. (The exact ids depend on the upstream pipeline state.)
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/fixtures/eval_questions.yaml
