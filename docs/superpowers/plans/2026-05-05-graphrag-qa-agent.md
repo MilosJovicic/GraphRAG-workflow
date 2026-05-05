@@ -1357,7 +1357,7 @@ git commit -m "feat(cypher): add graph expansion templates and hydrate query"
 - Modify: `src/qa_agent/neo4j_client.py`
 - Test: `tests/test_neo4j_client.py`
 
-- [ ] **Step 1: Write a unit-test of the cypher loader (no DB call)**
+- [x] **Step 1: Write a unit-test of the cypher loader (no DB call)**
 
 `tests/test_neo4j_client.py`:
 
@@ -1377,13 +1377,13 @@ def test_load_cypher_missing_file_raises():
         load_cypher("does_not_exist.cypher")
 ```
 
-- [ ] **Step 2: Run, expect failure if loader is broken**
+- [x] **Step 2: Run, expect failure if loader is broken**
 
 Run: `pytest tests/test_neo4j_client.py -v`
 
 If FAIL: implement step 3. If PASS: continue (loader is already correct from Phase 0; only `run_cypher` helper is missing — add it anyway).
 
-- [ ] **Step 3: Replace neo4j_client.py with the extended version**
+- [x] **Step 3: Replace neo4j_client.py with the extended version**
 
 `src/qa_agent/neo4j_client.py`:
 
@@ -1434,12 +1434,12 @@ async def run_cypher(filename: str, parameters: dict | None = None) -> list[dict
     return await run_query_async(load_cypher(filename), parameters)
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `pytest tests/test_neo4j_client.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/qa_agent/neo4j_client.py tests/test_neo4j_client.py

@@ -1,13 +1,18 @@
-from pathlib import Path
 from functools import lru_cache
-from neo4j import GraphDatabase, AsyncGraphDatabase
-from .config import get_settings
+from pathlib import Path
+
+from neo4j import AsyncGraphDatabase, GraphDatabase
+
+from qa_agent.config import get_settings
 
 _CYPHER_DIR = Path(__file__).parent / "cypher"
 
 
 def load_cypher(relative_path: str) -> str:
-    return (_CYPHER_DIR / relative_path).read_text(encoding="utf-8")
+    path = _CYPHER_DIR / relative_path
+    if not path.exists():
+        raise FileNotFoundError(f"Cypher template not found: {path}")
+    return path.read_text(encoding="utf-8")
 
 
 @lru_cache
@@ -34,3 +39,8 @@ async def run_query_async(cypher: str, parameters: dict | None = None) -> list[d
     async with driver.session() as session:
         result = await session.run(cypher, parameters or {})
         return [dict(record) async for record in result]
+
+
+async def run_cypher(filename: str, parameters: dict | None = None) -> list[dict]:
+    """Load a parameterized .cypher template and execute it against Neo4j."""
+    return await run_query_async(load_cypher(filename), parameters)
