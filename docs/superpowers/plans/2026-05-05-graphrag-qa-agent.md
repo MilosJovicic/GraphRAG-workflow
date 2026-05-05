@@ -2222,7 +2222,7 @@ git commit -m "feat(prompts): add planner prompt with label catalog and few-shot
 - Create: `src/qa_agent/agents/planner.py`
 - Test: `tests/test_planner.py`
 
-- [ ] **Step 1: Write the failing test (mocks PydanticAI)**
+- [x] **Step 1: Write the failing test (mocks PydanticAI)**
 
 `tests/test_planner.py`:
 
@@ -2251,12 +2251,12 @@ async def test_planner_returns_valid_plan_with_test_model(monkeypatch):
 
 (Note: PydanticAI's `TestModel` returns a deterministic stub matching the output schema. This test only verifies the wiring.)
 
-- [ ] **Step 2: Run, expect failure**
+- [x] **Step 2: Run, expect failure**
 
 Run: `pytest tests/test_planner.py -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement planner.py**
+- [x] **Step 3: Implement planner.py**
 
 `src/qa_agent/agents/planner.py`:
 
@@ -2299,12 +2299,12 @@ async def plan_question(question: str, agent: Agent[None, Plan] | None = None) -
     return result.output
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `pytest tests/test_planner.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/qa_agent/agents/planner.py tests/test_planner.py
