@@ -1694,7 +1694,7 @@ git commit -m "feat(retrieval): add BM25 leg with allow-listed filters"
 - Create: `src/qa_agent/retrieval/vector.py`
 - Test: `tests/test_vector.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/test_vector.py`:
 
@@ -1735,12 +1735,12 @@ async def test_vector_search_unknown_label_raises():
         await vector_search(sq, label="Page", limit=50)
 ```
 
-- [ ] **Step 2: Run, expect failure**
+- [x] **Step 2: Run, expect failure**
 
 Run: `pytest tests/test_vector.py -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement vector.py**
+- [x] **Step 3: Implement vector.py**
 
 `src/qa_agent/retrieval/vector.py`:
 
@@ -1770,12 +1770,12 @@ async def vector_search(sq: SubQuery, label: str, limit: int) -> list[Candidate]
     return [Candidate(**row) for row in rows]
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `pytest tests/test_vector.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/qa_agent/retrieval/vector.py tests/test_vector.py
