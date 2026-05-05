@@ -150,7 +150,7 @@ git commit -m "chore: add pyproject.toml with project deps"
 **Files:**
 - Create: `.env.example`
 
-- [ ] **Step 1: Write .env.example**
+- [x] **Step 1: Write .env.example**
 
 ```
 # Neo4j
@@ -184,12 +184,12 @@ RERANK_TOP_K=8
 RERANK_DOC_CHARS=1500
 ```
 
-- [ ] **Step 2: Verify .env.example does not contain real secrets**
+- [x] **Step 2: Verify .env.example does not contain real secrets**
 
 Run: `grep -E "^(GEMINI_API_KEY|COHERE_API_KEY|NEO4J_PASSWORD)=" .env.example`
 Expected: `GEMINI_API_KEY` and `NEO4J_PASSWORD` have the value `changeme`; `COHERE_API_KEY` is blank. No real keys.
 
-- [ ] **Step 3: Verify local .env has required key names**
+- [x] **Step 3: Verify local .env has required key names**
 
 Run this without printing secret values:
 
@@ -199,7 +199,7 @@ python -c "from dotenv import dotenv_values; required=['NEO4J_URI','NEO4J_USER',
 
 Expected: `missing=none`. `COHERE_API_KEY` may be absent or blank during development; rerank will fall back to RRF until it is set.
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add .env.example
