@@ -213,7 +213,7 @@ git commit -m "chore: add .env.example template"
 **Files:**
 - Create: `README.md`
 
-- [ ] **Step 1: Write README.md**
+- [x] **Step 1: Write README.md**
 
 ```markdown
 # Q&A Agent
@@ -292,7 +292,7 @@ pytest -m integration     # integration tests (requires running Neo4j + Ollama)
 See [`docs/superpowers/specs/2026-05-05-graphrag-qa-agent-design.md`](docs/superpowers/specs/2026-05-05-graphrag-qa-agent-design.md).
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add README.md
