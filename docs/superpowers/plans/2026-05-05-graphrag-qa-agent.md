@@ -3205,6 +3205,7 @@ import asyncio
 import logfire
 from temporalio.client import Client
 from temporalio.contrib.pydantic import pydantic_data_converter
+from temporalio.contrib.pydantic import pydantic_data_converter
 from temporalio.worker import Worker
 
 from qa_agent.config import get_settings
@@ -3262,7 +3263,7 @@ git commit -m "feat(worker): add Temporal worker entrypoint"
 **Files:**
 - Create: `src/qa_agent/starter.py`
 
-- [ ] **Step 1: Implement the CLI**
+- [x] **Step 1: Implement the CLI**
 
 `src/qa_agent/starter.py`:
 
@@ -3282,12 +3283,17 @@ from qa_agent.workflows.qa import QAWorkflow
 
 async def ask(question: str, debug: bool = False) -> QAResponse:
     s = get_settings()
-    client = await Client.connect(s.temporal_host, namespace=s.temporal_namespace)
+    client = await Client.connect(
+        s.temporal_host,
+        namespace=s.temporal_namespace,
+        data_converter=pydantic_data_converter,
+    )
     return await client.execute_workflow(
         QAWorkflow.run,
         QARequest(question=question, debug=debug),
         id=f"qa-{uuid.uuid4().hex[:12]}",
         task_queue=s.qa_task_queue,
+        result_type=QAResponse,
     )
 
 
@@ -3305,12 +3311,12 @@ if __name__ == "__main__":
     raise SystemExit(main())
 ```
 
-- [ ] **Step 2: Smoke check**
+- [x] **Step 2: Smoke check**
 
 Run: `python -c "import qa_agent.starter"`
 Expected: no errors.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/qa_agent/starter.py
