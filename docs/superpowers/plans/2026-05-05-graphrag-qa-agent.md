@@ -307,7 +307,7 @@ git commit -m "docs: add README with setup and run instructions"
 - Create: `src/qa_agent/__init__.py`
 - Move: `neo4j_client.py` → `src/qa_agent/neo4j_client.py`
 
-- [ ] **Step 1: Create the package directory and __init__.py**
+- [x] **Step 1: Create the package directory and __init__.py**
 
 ```bash
 mkdir -p src/qa_agent
@@ -320,13 +320,13 @@ Create `src/qa_agent/__init__.py`:
 __version__ = "0.1.0"
 ```
 
-- [ ] **Step 2: Move neo4j_client.py via git**
+- [x] **Step 2: Move neo4j_client.py via git**
 
 ```bash
 git mv neo4j_client.py src/qa_agent/neo4j_client.py
 ```
 
-- [ ] **Step 3: Create empty package subdirs**
+- [x] **Step 3: Create empty package subdirs**
 
 ```bash
 mkdir -p src/qa_agent/cypher src/qa_agent/retrieval src/qa_agent/agents \
@@ -341,12 +341,12 @@ Create `src/qa_agent/retrieval/__init__.py`, `src/qa_agent/agents/__init__.py`, 
 
 (Empty file. Use `New-Item -ItemType File <path>` or `touch <path>`.)
 
-- [ ] **Step 4: Verify the package imports**
+- [x] **Step 4: Verify the package imports**
 
 Run: `python -c "import qa_agent; print(qa_agent.__version__)"`
 Expected: prints `0.1.0`. Do not import `qa_agent.neo4j_client` yet; that waits for `config.py` in the next task.
 
-- [ ] **Step 5: Commit the move**
+- [x] **Step 5: Commit the move**
 
 ```bash
 git add src/ tests/
