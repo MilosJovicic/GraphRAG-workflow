@@ -1,7 +1,7 @@
 # GraphRAG Q&A Agent — Design Spec
 
 **Date:** 2026-05-05
-**Status:** Draft, pending user approval
+**Status:** Ready for step-by-step implementation after doc consistency fixes
 **Owner:** milos.jovicic@gmail.com
 
 ## 1. Goal
@@ -23,7 +23,7 @@ Build a question-answering agent over the existing Claude Code documentation kno
 - **Agent framework:** PydanticAI (>=1.61.0) for both the planner and the answerer agents. Pydantic output schemas, no freeform parsing.
 - **LLM (planner + answerer):** Gemini Flash via the AI Studio free tier. Read `GEMINI_API_KEY` from `.env`.
 - **Embeddings:** Qwen 3 0.6B served by Ollama, OpenAI-compatible endpoint at `http://localhost:11434/v1`. Dimension 1024 (must match the existing `*_embedding` vector indexes).
-- **Reranker:** Cohere `rerank-v3.5` (multilingual). Read `COHERE_API_KEY` from `.env`.
+- **Reranker:** Cohere `rerank-v3.5` (multilingual). Read optional `COHERE_API_KEY` from `.env`; when absent, use the RRF fallback path.
 - **Graph DB:** existing Neo4j at `neo4j://127.0.0.1:7687`. No schema changes.
 - **HTTP layer:** Flask 3.0.
 - **Observability:** Logfire (already pinned).
@@ -41,7 +41,7 @@ Two long-lived processes share `.env`:
                                                                               ▼
                                                                   ┌─────────────────────┐
                                                                   │ Worker process      │
-                                                                  │  qa_agent_worker.py │
+                                                                  │  qa_agent.worker    │
                                                                   │   • workflows/      │
                                                                   │   • activities/     │
                                                                   └──────────┬──────────┘
@@ -193,7 +193,7 @@ Q&A Agent/
 │   └── starter.py                # CLI: python -m qa_agent.starter "question"
 └── tests/
     ├── test_fusion.py
-    ├── test_routing_planner.py
+    ├── test_planner.py
     ├── test_cypher_safety.py
     ├── test_workflow_replay.py
     ├── test_retrieval_smoke.py
@@ -298,9 +298,9 @@ The filter allow-list (`filters` in `SubQuery`) is enforced at the activity boun
 | `expand_graph` | `ExpandRequest` | `list[Candidate]` (seeds ∪ expansions, deduped) | Cypher syntax / schema error |
 | `rerank` | `RerankRequest` | `list[Candidate]` (top_k, with `rerank_score`) | Cohere 4xx (auth/quota) |
 | `naive_hybrid_fallback` | `str` (question) | `list[Candidate]` (top 8) | same as above |
-| `generate_answer` | `GenerateRequest` | `QAResponse` (without `latency_ms`/`plan`) | Pydantic validation after 3 retries |
+| `generate_answer` | `GenerateRequest` | `QAResponse` with `plan`; workflow/API stitch final flags and latency | Pydantic validation after 3 retries |
 
-Every activity is a pure function from a typed input to a typed output. None touches files or session state. All env access goes through `get_settings()` (cached).
+Every activity is a typed, idempotent operation from input to output. Activities may read packaged prompt/Cypher templates, but they do not write files or use mutable session state. All env access goes through `get_settings()` (cached).
 
 ## 8. Retrieval mechanics
 
@@ -394,7 +394,7 @@ Response gives indices + relevance scores; we rebuild `list[Candidate]` in reran
 
 Edge cases:
 - Empty candidate list → return `[]` immediately, do not call Cohere.
-- Cohere 4xx → non-retryable. Workflow catches and uses RRF top-8 as fallback (sets `fallback_used=True`, logs warning).
+- Missing Cohere key or Cohere 4xx → non-retryable. Workflow catches and uses RRF top-8 as fallback (sets `fallback_used=True`, logs warning).
 - Cohere 5xx / network → retryable, 3 attempts.
 
 ### 8.5 Naive hybrid fallback
@@ -498,7 +498,7 @@ No LLM call.
 | Planner pydantic validation | inside agent | PydanticAI internal retry once with feedback, then surfaces; activity retries once more, then non-retryable. |
 | Ollama embeddings 5xx / connection refused | `hybrid_search` | 3× exp backoff. On final failure the sub-query's vector leg returns empty; BM25 leg alone produces results. RRF still functions. |
 | Neo4j connection error | any Cypher activity | 3× exp backoff. Schema/syntax errors are non-retryable → 500. |
-| Cohere 4xx | `rerank` | Non-retryable. Workflow catches and uses RRF top-8 (sets `fallback_used=True`). |
+| Missing Cohere key / Cohere 4xx | `rerank` | Non-retryable. Workflow catches and uses RRF top-8 (sets `fallback_used=True`). |
 | Cohere 5xx / network | `rerank` | 3× exp backoff. |
 | Gemini 5xx / timeout | `generate_answer` | 3× exp backoff. On final failure: workflow returns 500. |
 | Gemini quota (429) | `generate_answer` | Retryable with longer backoff (60s, 120s, 240s) to give the free-tier window time to reset. |
@@ -529,12 +529,12 @@ Five tiers:
 2. **Cypher safety** (`test_cypher_safety.py`):
    - Recursively grep `src/qa_agent/` for `f"MATCH"`, `f"CALL "`, `f"RETURN "`, `f"WHERE "`, `+ "MATCH"`, etc. Fails CI if any match.
 
-3. **Planner schema tests** (`test_routing_planner.py`):
+3. **Planner schema tests** (`test_planner.py`):
    - Mock the LLM client with canned outputs. Assert parsed `Plan` has valid labels, valid expansion patterns, ≥1 sub-query.
    - Feed broken JSON. Assert validation retry kicks in.
 
 4. **Workflow replay test** (`test_workflow_replay.py`):
-   - Record one happy-path workflow execution, save the history, replay via `temporalio.testing.WorkflowEnvironment`. Catches accidental non-determinism in workflow code.
+   - Run one happy-path workflow execution, capture the history in memory, replay via `temporalio.testing.WorkflowEnvironment`. Catches accidental non-determinism in workflow code.
 
 5. **End-to-end smoke + small eval** (`test_retrieval_smoke.py`, `fixtures/eval_questions.yaml`):
    - 5–10 hand-curated questions paired with expected node IDs that should appear in the reranked top-8.
@@ -543,7 +543,7 @@ Five tiers:
 
 ## 13. Configuration
 
-`.env` keys (all required unless noted):
+`.env` keys (all required unless marked optional):
 
 ```
 NEO4J_URI=neo4j://127.0.0.1:7687
@@ -556,7 +556,7 @@ QA_TASK_QUEUE=qa-agent-tq
 OLLAMA_BASE_URL=http://localhost:11434/v1
 EMBEDDING_MODEL=dengcao/Qwen3-Embedding-0.6B:Q8_0   # confirm exact tag with user before first run
 
-COHERE_API_KEY=...
+COHERE_API_KEY=...             # optional for development; missing key triggers RRF fallback
 COHERE_RERANK_MODEL=rerank-v3.5
 
 GEMINI_API_KEY=...
@@ -571,7 +571,7 @@ RERANK_TOP_K=8
 RERANK_DOC_CHARS=1500
 ```
 
-The variable name is standardized to `GEMINI_API_KEY` (all caps) — the existing `.env` uses `Gemini_API_KEY`, which we'll rename in the first implementation step.
+The variable name is standardized to `GEMINI_API_KEY` (all caps). If an existing local `.env` uses `Gemini_API_KEY`, rename it during bootstrap.
 
 ## 14. Open items / risks
 
@@ -583,11 +583,11 @@ The variable name is standardized to `GEMINI_API_KEY` (all caps) — the existin
 
 ## 15. Deliverable order (for the implementation plan)
 
-1. `pyproject.toml`, `.env.example`, `README.md`, rename `Gemini_API_KEY` → `GEMINI_API_KEY` in `.env`.
+1. `pyproject.toml`, `.env.example`, `README.md`, verify local `.env` uses `GEMINI_API_KEY` and has the required Ollama keys.
 2. `config.py`, `schemas.py`, `embeddings.py` + minimum extension to `neo4j_client.py`.
 3. `cypher/` files (vector, fulltext, expansion, hydrate) + `test_cypher_safety.py`.
 4. `retrieval/` modules (bm25, vector, fusion, expansion, rerank) + `test_fusion.py`.
-5. `agents/planner.py` + `prompts/planner.txt` + `test_routing_planner.py`.
+5. `agents/planner.py` + `prompts/planner.txt` + `test_planner.py`.
 6. `agents/answerer.py` + `prompts/answerer.txt`.
 7. Activities (`plan`, `retrieve`, `expand`, `rerank`, `generate`).
 8. `workflows/qa.py` + `test_workflow_replay.py`.
