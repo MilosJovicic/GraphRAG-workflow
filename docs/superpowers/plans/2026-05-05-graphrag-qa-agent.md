@@ -3333,7 +3333,7 @@ git commit -m "feat(cli): add starter for one-shot questions via Temporal"
 - Create: `src/qa_agent/api.py`
 - Test: `tests/test_api.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/test_api.py`:
 
@@ -3380,12 +3380,12 @@ def test_ask_invokes_workflow(client):
     assert r.get_json()["answer"] == "hi [1]."
 ```
 
-- [ ] **Step 2: Run, expect failure**
+- [x] **Step 2: Run, expect failure**
 
 Run: `pytest tests/test_api.py -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement api.py**
+- [x] **Step 3: Implement api.py**
 
 `src/qa_agent/api.py`:
 
@@ -3398,6 +3398,7 @@ import uuid
 from flask import Flask, jsonify, request
 from pydantic import ValidationError
 from temporalio.client import Client
+from temporalio.contrib.pydantic import pydantic_data_converter
 
 from qa_agent.config import get_settings
 from qa_agent.schemas import QARequest, QAResponse
@@ -3406,12 +3407,17 @@ from qa_agent.workflows.qa import QAWorkflow
 
 async def run_workflow(req: QARequest) -> QAResponse:
     s = get_settings()
-    client = await Client.connect(s.temporal_host, namespace=s.temporal_namespace)
+    client = await Client.connect(
+        s.temporal_host,
+        namespace=s.temporal_namespace,
+        data_converter=pydantic_data_converter,
+    )
     return await client.execute_workflow(
         QAWorkflow.run,
         req,
         id=f"qa-{uuid.uuid4().hex[:12]}",
         task_queue=s.qa_task_queue,
+        result_type=QAResponse,
     )
 
 
@@ -3454,12 +3460,12 @@ if __name__ == "__main__":
     main()
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `pytest tests/test_api.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/qa_agent/api.py tests/test_api.py
