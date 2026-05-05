@@ -3075,7 +3075,7 @@ git commit -m "feat(workflows): add QAWorkflow with planner-failure and rerank f
 **Files:**
 - Test: `tests/test_workflow_replay.py`
 
-- [ ] **Step 1: Add a determinism replay test**
+- [x] **Step 1: Add a determinism replay test**
 
 For v1, we use Temporal's `Worker` in a `WorkflowEnvironment` to run the workflow once with mock activities, capture the history, then replay it. The "replay" is what catches non-determinism if someone later edits the workflow body.
 
@@ -3173,12 +3173,12 @@ async def test_qaworkflow_replays_cleanly():
     await replayer.replay_workflow(history)
 ```
 
-- [ ] **Step 2: Run the test**
+- [x] **Step 2: Run the test**
 
 Run: `pytest tests/test_workflow_replay.py -v`
 Expected: PASS. (If it complains about Temporal time-skipping needing the test server binary, let the SDK auto-fetch it or install the Temporal test server binary using the SDK's documented workflow.)
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/test_workflow_replay.py
