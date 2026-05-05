@@ -2570,7 +2570,7 @@ git commit -m "feat(activities): add plan_query activity wrapping planner agent"
 - Create: `src/qa_agent/activities/retrieve.py`
 - Test: `tests/test_activity_retrieve.py`
 
-- [ ] **Step 1: Write a unit test for the de-dup merge logic**
+- [x] **Step 1: Write a unit test for the de-dup merge logic**
 
 `tests/test_activity_retrieve.py`:
 
@@ -2599,12 +2599,12 @@ def test_merge_legs_dedupes_and_combines_scores():
     assert len(out) == 3
 ```
 
-- [ ] **Step 2: Run, expect failure**
+- [x] **Step 2: Run, expect failure**
 
 Run: `pytest tests/test_activity_retrieve.py -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement retrieve.py**
+- [x] **Step 3: Implement retrieve.py**
 
 `src/qa_agent/activities/retrieve.py`:
 
@@ -2695,12 +2695,12 @@ async def naive_hybrid_fallback(question: str) -> list[Candidate]:
             return fused[: s.rerank_top_k]
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `pytest tests/test_activity_retrieve.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/qa_agent/activities/retrieve.py tests/test_activity_retrieve.py
