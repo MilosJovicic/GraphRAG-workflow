@@ -2093,7 +2093,7 @@ git commit -m "feat(retrieval): add Cohere rerank with doc truncation"
 **Files:**
 - Create: `src/qa_agent/prompts/planner.txt`
 
-- [ ] **Step 1: Write the planner prompt**
+- [x] **Step 1: Write the planner prompt**
 
 `src/qa_agent/prompts/planner.txt`:
 
@@ -2207,7 +2207,7 @@ User: "Compare the bypassPermissions and acceptEdits permission modes."
 Now produce the Plan for the user's question.
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add src/qa_agent/prompts/planner.txt
