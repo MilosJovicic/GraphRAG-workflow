@@ -363,7 +363,7 @@ git commit -m "refactor: move neo4j_client.py into src/qa_agent/ package layout"
 - Create: `src/qa_agent/config.py`
 - Test: `tests/test_config.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/test_config.py`:
 
@@ -407,12 +407,12 @@ def test_get_settings_caches(monkeypatch):
     assert a is b
 ```
 
-- [ ] **Step 2: Run test, confirm it fails**
+- [x] **Step 2: Run test, confirm it fails**
 
 Run: `pytest tests/test_config.py -v`
 Expected: FAIL with `ModuleNotFoundError: No module named 'qa_agent.config'` or similar.
 
-- [ ] **Step 3: Implement config.py**
+- [x] **Step 3: Implement config.py**
 
 `src/qa_agent/config.py`:
 
@@ -461,12 +461,12 @@ def get_settings() -> Settings:
     return Settings()
 ```
 
-- [ ] **Step 4: Run test, confirm it passes**
+- [x] **Step 4: Run test, confirm it passes**
 
 Run: `pytest tests/test_config.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/qa_agent/config.py tests/test_config.py
