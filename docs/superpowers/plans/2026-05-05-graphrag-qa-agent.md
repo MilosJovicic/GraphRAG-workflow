@@ -708,7 +708,7 @@ git commit -m "feat(schemas): add wire types for retrieval, planning, response"
 - Create: `src/qa_agent/retrieval/fusion.py`
 - Test: `tests/test_fusion.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `tests/test_fusion.py`:
 
@@ -788,12 +788,12 @@ def test_rrf_preserves_payload():
     assert out[0].bm25_score == 10.0
 ```
 
-- [ ] **Step 2: Run tests, confirm they fail**
+- [x] **Step 2: Run tests, confirm they fail**
 
 Run: `pytest tests/test_fusion.py -v`
 Expected: FAIL with `ModuleNotFoundError`.
 
-- [ ] **Step 3: Implement fusion.py**
+- [x] **Step 3: Implement fusion.py**
 
 `src/qa_agent/retrieval/fusion.py`:
 
@@ -849,12 +849,12 @@ def rrf_fuse(
     return out
 ```
 
-- [ ] **Step 4: Run tests, confirm they pass**
+- [x] **Step 4: Run tests, confirm they pass**
 
 Run: `pytest tests/test_fusion.py -v`
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/qa_agent/retrieval/fusion.py src/qa_agent/retrieval/__init__.py tests/test_fusion.py
