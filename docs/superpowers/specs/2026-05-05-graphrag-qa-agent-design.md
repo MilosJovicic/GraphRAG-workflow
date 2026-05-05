@@ -217,9 +217,7 @@ class QARequest(BaseModel):
 class Citation(BaseModel):
     id: int                          # 1-indexed, matches inline [n] markers
     node_id: str
-    node_label: Literal["Section","Chunk","CodeBlock","TableRow","Callout",
-                        "Tool","Hook","SettingKey","PermissionMode",
-                        "MessageType","Provider"]
+    node_label: str                  # may include Page from graph expansion
     url: str | None = None
     anchor: str | None = None
     title: str | None = None         # breadcrumb tail or entity name

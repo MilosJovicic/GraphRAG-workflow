@@ -41,7 +41,7 @@ class QARequest(BaseModel):
 class Citation(BaseModel):
     id: int
     node_id: str
-    node_label: NodeLabel
+    node_label: str
     url: str | None = None
     anchor: str | None = None
     title: str | None = None

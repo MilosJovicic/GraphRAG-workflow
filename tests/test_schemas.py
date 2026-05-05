@@ -4,6 +4,7 @@ from pydantic import ValidationError
 from qa_agent.schemas import (
     NODE_LABELS,
     Candidate,
+    Citation,
     ExpansionPattern,
     Plan,
     QARequest,
@@ -70,3 +71,15 @@ def test_candidate_default_scores_none():
     assert c.bm25_score is None
     assert c.vector_score is None
     assert c.rrf_score is None
+
+
+def test_citation_accepts_page_label_from_expansion():
+    citation = Citation(
+        id=1,
+        node_id="page-1",
+        node_label="Page",
+        snippet="page evidence",
+        score=0.5,
+    )
+
+    assert citation.node_label == "Page"
