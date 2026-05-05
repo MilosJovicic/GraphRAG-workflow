@@ -2318,7 +2318,7 @@ git commit -m "feat(agents): add planner agent producing Plan via PydanticAI"
 **Files:**
 - Create: `src/qa_agent/prompts/answerer.txt`
 
-- [ ] **Step 1: Write the answerer prompt**
+- [x] **Step 1: Write the answerer prompt**
 
 `src/qa_agent/prompts/answerer.txt`:
 
@@ -2357,7 +2357,7 @@ Return JSON matching this schema:
 }
 ```
 
-- [ ] **Step 2: Commit**
+- [x] **Step 2: Commit**
 
 ```bash
 git add src/qa_agent/prompts/answerer.txt
