@@ -870,7 +870,7 @@ git commit -m "feat(retrieval): add deterministic RRF fusion"
 **Files:**
 - Test: `tests/test_cypher_safety.py`
 
-- [ ] **Step 1: Write the test (will pass trivially today, but locks the contract)**
+- [x] **Step 1: Write the test (will pass trivially today, but locks the contract)**
 
 `tests/test_cypher_safety.py`:
 
@@ -912,12 +912,12 @@ def test_no_f_string_cypher_in_src():
     )
 ```
 
-- [ ] **Step 2: Run test, confirm it passes (no Cypher yet)**
+- [x] **Step 2: Run test, confirm it passes (no Cypher yet)**
 
 Run: `pytest tests/test_cypher_safety.py -v`
 Expected: PASS (vacuously — there's no Cypher in src yet).
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/test_cypher_safety.py
