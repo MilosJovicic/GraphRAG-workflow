@@ -1068,7 +1068,7 @@ git commit -m "feat(cypher): add vector-index lookup templates per searchable la
 - Create: `src/qa_agent/cypher/fulltext_tablerow.cypher`
 - Create: `src/qa_agent/cypher/fulltext_callout.cypher`
 
-- [ ] **Step 1: Write fulltext_section.cypher**
+- [x] **Step 1: Write fulltext_section.cypher**
 
 ```cypher
 CALL db.index.fulltext.queryNodes('section_fulltext', $query) YIELD node, score
@@ -1089,7 +1089,7 @@ ORDER BY score DESC
 LIMIT $limit
 ```
 
-- [ ] **Step 2: Write fulltext_chunk.cypher**
+- [x] **Step 2: Write fulltext_chunk.cypher**
 
 ```cypher
 CALL db.index.fulltext.queryNodes('chunk_fulltext', $query) YIELD node, score
@@ -1111,7 +1111,7 @@ ORDER BY score DESC
 LIMIT $limit
 ```
 
-- [ ] **Step 3: Write fulltext_codeblock.cypher**
+- [x] **Step 3: Write fulltext_codeblock.cypher**
 
 ```cypher
 CALL db.index.fulltext.queryNodes('codeblock_fulltext', $query) YIELD node, score
@@ -1134,7 +1134,7 @@ ORDER BY score DESC
 LIMIT $limit
 ```
 
-- [ ] **Step 4: Write fulltext_tablerow.cypher**
+- [x] **Step 4: Write fulltext_tablerow.cypher**
 
 ```cypher
 CALL db.index.fulltext.queryNodes('tablerow_fulltext', $query) YIELD node, score
@@ -1156,7 +1156,7 @@ ORDER BY score DESC
 LIMIT $limit
 ```
 
-- [ ] **Step 5: Write fulltext_callout.cypher**
+- [x] **Step 5: Write fulltext_callout.cypher**
 
 ```cypher
 CALL db.index.fulltext.queryNodes('callout_fulltext', $query) YIELD node, score
@@ -1178,12 +1178,12 @@ ORDER BY score DESC
 LIMIT $limit
 ```
 
-- [ ] **Step 6: Verify cypher safety test still passes**
+- [x] **Step 6: Verify cypher safety test still passes**
 
 Run: `pytest tests/test_cypher_safety.py -v`
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/qa_agent/cypher/fulltext_*.cypher
