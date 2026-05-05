@@ -1572,7 +1572,7 @@ git commit -m "feat(embeddings): add Ollama OpenAI-compatible embed_one/embed_ba
 - Create: `src/qa_agent/retrieval/bm25.py`
 - Test: `tests/test_bm25.py`
 
-- [ ] **Step 1: Write the failing test (mocks run_cypher)**
+- [x] **Step 1: Write the failing test (mocks run_cypher)**
 
 `tests/test_bm25.py`:
 
@@ -1624,12 +1624,12 @@ async def test_bm25_search_drops_unknown_filter_keys():
     assert "bogus" not in params
 ```
 
-- [ ] **Step 2: Run, expect failure**
+- [x] **Step 2: Run, expect failure**
 
 Run: `pytest tests/test_bm25.py -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement bm25.py**
+- [x] **Step 3: Implement bm25.py**
 
 `src/qa_agent/retrieval/bm25.py`:
 
@@ -1674,12 +1674,12 @@ async def bm25_search(sq: SubQuery, label: str, limit: int) -> list[Candidate]:
     return [Candidate(**row) for row in rows]
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `pytest tests/test_bm25.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/qa_agent/retrieval/bm25.py tests/test_bm25.py
