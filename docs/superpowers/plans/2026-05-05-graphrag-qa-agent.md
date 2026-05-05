@@ -2529,7 +2529,7 @@ git commit -m "feat(agents): add answerer agent with citation extraction and val
 """Temporal activity: plan_query."""
 from __future__ import annotations
 from temporalio import activity
-from temporalio.exceptions import ApplicationError
+from temporalio.exceptions import ActivityError, ApplicationError
 from pydantic import ValidationError
 import logfire
 from qa_agent.schemas import Plan
@@ -2910,7 +2910,7 @@ git commit -m "feat(activities): add generate_answer with citation validation"
 **Files:**
 - Create: `src/qa_agent/workflows/qa.py`
 
-- [ ] **Step 1: Implement the workflow**
+- [x] **Step 1: Implement the workflow**
 
 `src/qa_agent/workflows/qa.py`:
 
@@ -2941,6 +2941,14 @@ _DEFAULT_RETRY = RetryPolicy(
 )
 
 
+def _is_non_retryable_application_error(exc: BaseException) -> bool:
+    return (
+        isinstance(exc, ActivityError)
+        and isinstance(exc.cause, ApplicationError)
+        and exc.cause.non_retryable
+    )
+
+
 @workflow.defn
 class QAWorkflow:
     @workflow.run
@@ -2955,8 +2963,8 @@ class QAWorkflow:
                 start_to_close_timeout=timedelta(seconds=20),
                 retry_policy=_DEFAULT_RETRY,
             )
-        except ApplicationError as e:
-            if not e.non_retryable:
+        except ActivityError as e:
+            if not _is_non_retryable_application_error(e):
                 raise
             planner_failed = True
             plan = Plan.fallback_for(req.question)
@@ -3010,8 +3018,8 @@ class QAWorkflow:
                 start_to_close_timeout=timedelta(seconds=15),
                 retry_policy=_DEFAULT_RETRY,
             )
-        except ApplicationError as e:
-            if not e.non_retryable:
+        except ActivityError as e:
+            if not _is_non_retryable_application_error(e):
                 raise
             rerank_failed = True
             # Fall back to RRF top-K
@@ -3040,12 +3048,12 @@ class QAWorkflow:
         return resp.model_copy(update={"fallback_used": fallback_used})
 ```
 
-- [ ] **Step 2: Smoke import**
+- [x] **Step 2: Smoke import**
 
 Run: `python -c "from qa_agent.workflows.qa import QAWorkflow; print(QAWorkflow.__name__)"`
 Expected: prints `QAWorkflow`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/qa_agent/workflows/qa.py
