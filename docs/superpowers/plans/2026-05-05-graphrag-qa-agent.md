@@ -68,7 +68,7 @@ Files are listed with their single responsibility. Tasks below produce them in t
 - Create: `pyproject.toml`
 - Modify: `requirements.txt`
 
-- [ ] **Step 1: Write pyproject.toml and requirements shim**
+- [x] **Step 1: Write pyproject.toml and requirements shim**
 
 ```toml
 [project]
@@ -94,7 +94,6 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = [
-    "temporalio[testsuite]>=1.20.0",
     "pytest>=8.3.0",
     "pytest-asyncio>=0.24.0",
     "pytest-mock>=3.14.0",
@@ -127,12 +126,17 @@ Replace `requirements.txt` with:
 -e .[dev]
 ```
 
-- [ ] **Step 2: Install in editable mode**
+- [x] **Step 2: Create the empty src base directory**
+
+Run: `mkdir src`
+Expected: creates `src/`. This directory is populated with `qa_agent/` in Task 0.4, but it must exist before editable install because `pyproject.toml` uses `where = ["src"]`.
+
+- [x] **Step 3: Install in editable mode**
 
 Run: `pip install -e ".[dev]"`
 Expected: installs all deps, exits 0.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add pyproject.toml requirements.txt
@@ -3155,7 +3159,7 @@ async def test_qaworkflow_replays_cleanly():
 - [ ] **Step 2: Run the test**
 
 Run: `pytest tests/test_workflow_replay.py -v`
-Expected: PASS. (If it complains about Temporal time-skipping needing the test server binary, install it — `pip install "temporalio[testsuite]"` if not already, or the SDK may auto-fetch.)
+Expected: PASS. (If it complains about Temporal time-skipping needing the test server binary, let the SDK auto-fetch it or install the Temporal test server binary using the SDK's documented workflow.)
 
 - [ ] **Step 3: Commit**
 
