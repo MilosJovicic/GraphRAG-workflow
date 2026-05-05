@@ -1790,7 +1790,7 @@ git commit -m "feat(retrieval): add vector leg using embed_one + per-label templ
 - Create: `src/qa_agent/retrieval/expansion.py`
 - Test: `tests/test_expansion.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/test_expansion.py`:
 
@@ -1860,12 +1860,12 @@ async def test_expand_no_patterns_returns_seeds_only():
     assert [c.node_id for c in out] == ["s1"]
 ```
 
-- [ ] **Step 2: Run, expect failure**
+- [x] **Step 2: Run, expect failure**
 
 Run: `pytest tests/test_expansion.py -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement expansion.py**
+- [x] **Step 3: Implement expansion.py**
 
 `src/qa_agent/retrieval/expansion.py`:
 
@@ -1943,12 +1943,12 @@ async def expand(
     return out
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `pytest tests/test_expansion.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/qa_agent/retrieval/expansion.py tests/test_expansion.py
