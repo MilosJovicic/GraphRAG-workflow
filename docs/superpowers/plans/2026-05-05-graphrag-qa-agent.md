@@ -3557,7 +3557,7 @@ git commit -m "test(eval): add hand-curated eval question set"
 **Files:**
 - Test: `tests/test_retrieval_smoke.py`
 
-- [ ] **Step 1: Add an integration-marked smoke test**
+- [x] **Step 1: Add an integration-marked smoke test**
 
 `tests/test_retrieval_smoke.py`:
 
@@ -3569,15 +3569,23 @@ Skipped unless `pytest -m integration` is used. Reads tests/fixtures/eval_questi
 import pytest
 import yaml
 import uuid
+import os
 from pathlib import Path
 from temporalio.client import Client
+from temporalio.contrib.pydantic import pydantic_data_converter
 
 from qa_agent.config import get_settings
 from qa_agent.schemas import QARequest, QAResponse
 from qa_agent.workflows.qa import QAWorkflow
 
 
-pytestmark = pytest.mark.integration
+pytestmark = [
+    pytest.mark.integration,
+    pytest.mark.skipif(
+        os.getenv("QA_RUN_INTEGRATION") != "1",
+        reason="set QA_RUN_INTEGRATION=1 with Temporal worker and services running",
+    ),
+]
 
 
 def _load_eval():
@@ -3589,12 +3597,17 @@ def _load_eval():
 @pytest.mark.parametrize("entry", _load_eval(), ids=lambda e: e["id"])
 async def test_recall_at_8(entry):
     s = get_settings()
-    client = await Client.connect(s.temporal_host, namespace=s.temporal_namespace)
+    client = await Client.connect(
+        s.temporal_host,
+        namespace=s.temporal_namespace,
+        data_converter=pydantic_data_converter,
+    )
     resp: QAResponse = await client.execute_workflow(
         QAWorkflow.run,
         QARequest(question=entry["question"], debug=True),
         id=f"qa-eval-{entry['id']}-{uuid.uuid4().hex[:6]}",
         task_queue=s.qa_task_queue,
+        result_type=QAResponse,
     )
 
     cited_ids = {c.node_id for c in resp.citations}
@@ -3608,14 +3621,14 @@ async def test_recall_at_8(entry):
     )
 ```
 
-- [ ] **Step 2: Run with the integration marker (only when worker + services are up)**
+- [x] **Step 2: Run with the integration marker (only when worker + services are up)**
 
-Run: `pytest -m integration tests/test_retrieval_smoke.py -v`
+Run: `QA_RUN_INTEGRATION=1 pytest -m integration tests/test_retrieval_smoke.py -v`
 
-Expected when not running services: deselected (PASS, no tests run because marker filter).
+Expected when not running services / env flag not set: skipped.
 Expected when worker is up: most cases PASS; investigate any failures by inspecting `resp.plan` and `resp.retrieved`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add tests/test_retrieval_smoke.py
