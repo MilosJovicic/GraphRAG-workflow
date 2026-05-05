@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import asyncio
-from datetime import timedelta
+from datetime import datetime, timedelta
 
 from temporalio import workflow
 from temporalio.common import RetryPolicy
@@ -37,13 +37,21 @@ def _is_non_retryable_application_error(exc: BaseException) -> bool:
     )
 
 
+def _ms_since(start: datetime) -> int:
+    return int((workflow.now() - start).total_seconds() * 1000)
+
+
 @workflow.defn
 class QAWorkflow:
     @workflow.run
     async def run(self, req: QARequest) -> QAResponse:
+        latency_ms: dict[str, int] = {}
+        wf_start = workflow.now()
+
         plan: Plan
         planner_failed = False
         try:
+            t = workflow.now()
             plan = await workflow.execute_activity(
                 "plan_query",
                 req.question,
@@ -51,6 +59,7 @@ class QAWorkflow:
                 start_to_close_timeout=timedelta(seconds=20),
                 retry_policy=_DEFAULT_RETRY,
             )
+            latency_ms["plan"] = _ms_since(t)
         except ActivityError as exc:
             if not _is_non_retryable_application_error(exc):
                 raise
@@ -58,6 +67,7 @@ class QAWorkflow:
             plan = Plan.fallback_for(req.question)
 
         if planner_failed:
+            t = workflow.now()
             top: list[Candidate] = await workflow.execute_activity(
                 "naive_hybrid_fallback",
                 req.question,
@@ -65,9 +75,17 @@ class QAWorkflow:
                 start_to_close_timeout=timedelta(seconds=20),
                 retry_policy=_DEFAULT_RETRY,
             )
+            latency_ms["naive_fallback"] = _ms_since(t)
             if not top:
-                return QAResponse.empty(plan, fallback_used=True)
+                latency_ms["total"] = _ms_since(wf_start)
+                return QAResponse.empty(plan, fallback_used=True).model_copy(
+                    update={
+                        "latency_ms": latency_ms,
+                        "retrieved": top if req.debug else None,
+                    }
+                )
 
+            t = workflow.now()
             response = await workflow.execute_activity(
                 "generate_answer",
                 GenerateRequest(question=req.question, evidence=top, plan=plan),
@@ -75,8 +93,17 @@ class QAWorkflow:
                 start_to_close_timeout=timedelta(seconds=45),
                 retry_policy=_DEFAULT_RETRY,
             )
-            return response.model_copy(update={"fallback_used": True})
+            latency_ms["generate"] = _ms_since(t)
+            latency_ms["total"] = _ms_since(wf_start)
+            return response.model_copy(
+                update={
+                    "fallback_used": True,
+                    "latency_ms": latency_ms,
+                    "retrieved": top if req.debug else None,
+                }
+            )
 
+        t = workflow.now()
         per_subquery: list[list[Candidate]] = await asyncio.gather(
             *[
                 workflow.execute_activity(
@@ -89,8 +116,11 @@ class QAWorkflow:
                 for sub_query in plan.sub_queries
             ]
         )
+        latency_ms["hybrid_search"] = _ms_since(t)
 
         fused = rrf_fuse(per_subquery, k=60, top_n=40)
+
+        t = workflow.now()
         expanded = await workflow.execute_activity(
             "expand_graph",
             ExpandRequest(seeds=fused, patterns=plan.expansion_patterns),
@@ -98,8 +128,10 @@ class QAWorkflow:
             start_to_close_timeout=timedelta(seconds=10),
             retry_policy=_DEFAULT_RETRY,
         )
+        latency_ms["expand"] = _ms_since(t)
 
         fallback_used = False
+        t = workflow.now()
         try:
             top = await workflow.execute_activity(
                 "rerank",
@@ -113,9 +145,11 @@ class QAWorkflow:
                 raise
             fallback_used = True
             top = expanded[:8]
+        latency_ms["rerank"] = _ms_since(t)
 
         if not top:
             fallback_used = True
+            t = workflow.now()
             top = await workflow.execute_activity(
                 "naive_hybrid_fallback",
                 req.question,
@@ -123,10 +157,18 @@ class QAWorkflow:
                 start_to_close_timeout=timedelta(seconds=20),
                 retry_policy=_DEFAULT_RETRY,
             )
+            latency_ms["naive_fallback"] = _ms_since(t)
 
         if not top:
-            return QAResponse.empty(plan, fallback_used=fallback_used)
+            latency_ms["total"] = _ms_since(wf_start)
+            return QAResponse.empty(plan, fallback_used=fallback_used).model_copy(
+                update={
+                    "latency_ms": latency_ms,
+                    "retrieved": top if req.debug else None,
+                }
+            )
 
+        t = workflow.now()
         response = await workflow.execute_activity(
             "generate_answer",
             GenerateRequest(question=req.question, evidence=top, plan=plan),
@@ -134,4 +176,12 @@ class QAWorkflow:
             start_to_close_timeout=timedelta(seconds=45),
             retry_policy=_DEFAULT_RETRY,
         )
-        return response.model_copy(update={"fallback_used": fallback_used})
+        latency_ms["generate"] = _ms_since(t)
+        latency_ms["total"] = _ms_since(wf_start)
+        return response.model_copy(
+            update={
+                "fallback_used": fallback_used,
+                "latency_ms": latency_ms,
+                "retrieved": top if req.debug else None,
+            }
+        )
