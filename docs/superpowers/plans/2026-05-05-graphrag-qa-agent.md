@@ -2960,6 +2960,7 @@ class QAWorkflow:
             plan = await workflow.execute_activity(
                 "plan_query",
                 req.question,
+                result_type=Plan,
                 start_to_close_timeout=timedelta(seconds=20),
                 retry_policy=_DEFAULT_RETRY,
             )
@@ -2974,6 +2975,7 @@ class QAWorkflow:
             top: list[Candidate] = await workflow.execute_activity(
                 "naive_hybrid_fallback",
                 req.question,
+                result_type=list[Candidate],
                 start_to_close_timeout=timedelta(seconds=20),
                 retry_policy=_DEFAULT_RETRY,
             )
@@ -2982,6 +2984,7 @@ class QAWorkflow:
             resp = await workflow.execute_activity(
                 "generate_answer",
                 GenerateRequest(question=req.question, evidence=top, plan=plan),
+                result_type=QAResponse,
                 start_to_close_timeout=timedelta(seconds=45),
                 retry_policy=_DEFAULT_RETRY,
             )
@@ -2992,6 +2995,7 @@ class QAWorkflow:
             workflow.execute_activity(
                 "hybrid_search",
                 sq,
+                result_type=list[Candidate],
                 start_to_close_timeout=timedelta(seconds=15),
                 retry_policy=_DEFAULT_RETRY,
             )
@@ -3005,6 +3009,7 @@ class QAWorkflow:
         expanded = await workflow.execute_activity(
             "expand_graph",
             ExpandRequest(seeds=fused, patterns=plan.expansion_patterns),
+            result_type=list[Candidate],
             start_to_close_timeout=timedelta(seconds=10),
             retry_policy=_DEFAULT_RETRY,
         )
@@ -3015,6 +3020,7 @@ class QAWorkflow:
             top = await workflow.execute_activity(
                 "rerank",
                 RerankRequest(question=req.question, candidates=expanded, top_k=8),
+                result_type=list[Candidate],
                 start_to_close_timeout=timedelta(seconds=15),
                 retry_policy=_DEFAULT_RETRY,
             )
@@ -3032,6 +3038,7 @@ class QAWorkflow:
             top = await workflow.execute_activity(
                 "naive_hybrid_fallback",
                 req.question,
+                result_type=list[Candidate],
                 start_to_close_timeout=timedelta(seconds=20),
                 retry_policy=_DEFAULT_RETRY,
             )
@@ -3042,6 +3049,7 @@ class QAWorkflow:
         resp = await workflow.execute_activity(
             "generate_answer",
             GenerateRequest(question=req.question, evidence=top, plan=plan),
+            result_type=QAResponse,
             start_to_close_timeout=timedelta(seconds=45),
             retry_policy=_DEFAULT_RETRY,
         )
