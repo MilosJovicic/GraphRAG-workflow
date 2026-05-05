@@ -481,7 +481,7 @@ git commit -m "feat(config): add Settings via pydantic-settings"
 - Create: `src/qa_agent/schemas.py`
 - Test: `tests/test_schemas.py`
 
-- [ ] **Step 1: Write the failing tests**
+- [x] **Step 1: Write the failing tests**
 
 `tests/test_schemas.py`:
 
@@ -546,12 +546,12 @@ def test_candidate_default_scores_none():
     assert c.rrf_score is None
 ```
 
-- [ ] **Step 2: Run tests, confirm they fail**
+- [x] **Step 2: Run tests, confirm they fail**
 
 Run: `pytest tests/test_schemas.py -v`
 Expected: FAIL with `ModuleNotFoundError`.
 
-- [ ] **Step 3: Implement schemas.py**
+- [x] **Step 3: Implement schemas.py**
 
 `src/qa_agent/schemas.py`:
 
@@ -686,12 +686,12 @@ class AnswerWithCitations(BaseModel):
     used_citation_ids: list[int] = Field(default_factory=list)
 ```
 
-- [ ] **Step 4: Run tests, confirm they pass**
+- [x] **Step 4: Run tests, confirm they pass**
 
 Run: `pytest tests/test_schemas.py -v`
 Expected: all PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/qa_agent/schemas.py tests/test_schemas.py
