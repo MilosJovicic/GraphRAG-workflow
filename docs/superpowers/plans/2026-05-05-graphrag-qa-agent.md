@@ -2372,7 +2372,7 @@ git commit -m "feat(prompts): add answerer prompt with strict citation rules"
 - Create: `src/qa_agent/agents/answerer.py`
 - Test: `tests/test_answerer_citations.py`
 
-- [ ] **Step 1: Write the failing test for citation validation**
+- [x] **Step 1: Write the failing test for citation validation**
 
 `tests/test_answerer_citations.py`:
 
@@ -2411,12 +2411,12 @@ def test_validate_citations_flags_used_but_not_in_text():
     assert missing == [2]
 ```
 
-- [ ] **Step 2: Run, expect failure**
+- [x] **Step 2: Run, expect failure**
 
 Run: `pytest tests/test_answerer_citations.py -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement answerer.py**
+- [x] **Step 3: Implement answerer.py**
 
 `src/qa_agent/agents/answerer.py`:
 
@@ -2493,17 +2493,19 @@ async def answer_with_citations(
 ) -> AnswerWithCitations:
     a = agent if agent is not None else build_answerer_agent()
     template = _load_prompt_template()
-    prompt = template.format(question=question, evidence_block=render_evidence(evidence))
+    prompt = template.replace("{question}", question).replace(
+        "{evidence_block}", render_evidence(evidence)
+    )
     result = await a.run(prompt)
     return result.output
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `pytest tests/test_answerer_citations.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/qa_agent/agents/answerer.py tests/test_answerer_citations.py
