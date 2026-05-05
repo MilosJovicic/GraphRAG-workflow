@@ -935,7 +935,7 @@ git commit -m "test(cypher): lock contract that all Cypher is loaded from .cyphe
 - Create: `src/qa_agent/cypher/vector_tablerow.cypher`
 - Create: `src/qa_agent/cypher/vector_callout.cypher`
 
-- [ ] **Step 1: Write vector_section.cypher**
+- [x] **Step 1: Write vector_section.cypher**
 
 ```cypher
 CALL db.index.vector.queryNodes('section_embedding', $limit, $query_vector)
@@ -956,7 +956,7 @@ ORDER BY score DESC
 LIMIT $limit
 ```
 
-- [ ] **Step 2: Write vector_chunk.cypher**
+- [x] **Step 2: Write vector_chunk.cypher**
 
 ```cypher
 CALL db.index.vector.queryNodes('chunk_embedding', $limit, $query_vector)
@@ -978,7 +978,7 @@ ORDER BY score DESC
 LIMIT $limit
 ```
 
-- [ ] **Step 3: Write vector_codeblock.cypher**
+- [x] **Step 3: Write vector_codeblock.cypher**
 
 ```cypher
 CALL db.index.vector.queryNodes('codeblock_embedding', $limit, $query_vector)
@@ -1001,7 +1001,7 @@ ORDER BY score DESC
 LIMIT $limit
 ```
 
-- [ ] **Step 4: Write vector_tablerow.cypher**
+- [x] **Step 4: Write vector_tablerow.cypher**
 
 ```cypher
 CALL db.index.vector.queryNodes('tablerow_embedding', $limit, $query_vector)
@@ -1023,7 +1023,7 @@ ORDER BY score DESC
 LIMIT $limit
 ```
 
-- [ ] **Step 5: Write vector_callout.cypher**
+- [x] **Step 5: Write vector_callout.cypher**
 
 ```cypher
 CALL db.index.vector.queryNodes('callout_embedding', $limit, $query_vector)
@@ -1045,12 +1045,12 @@ ORDER BY score DESC
 LIMIT $limit
 ```
 
-- [ ] **Step 6: Verify cypher safety test still passes**
+- [x] **Step 6: Verify cypher safety test still passes**
 
 Run: `pytest tests/test_cypher_safety.py -v`
 Expected: PASS.
 
-- [ ] **Step 7: Commit**
+- [x] **Step 7: Commit**
 
 ```bash
 git add src/qa_agent/cypher/vector_*.cypher
