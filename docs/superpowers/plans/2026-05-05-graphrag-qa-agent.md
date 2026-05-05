@@ -1963,7 +1963,7 @@ git commit -m "feat(retrieval): add graph expansion with dedup and total_cap"
 - Create: `src/qa_agent/retrieval/rerank.py`
 - Test: `tests/test_rerank.py`
 
-- [ ] **Step 1: Write the failing test**
+- [x] **Step 1: Write the failing test**
 
 `tests/test_rerank.py`:
 
@@ -2018,12 +2018,12 @@ async def test_cohere_rerank_truncates_documents_and_reorders(monkeypatch):
     assert kwargs["query"] == "q"
 ```
 
-- [ ] **Step 2: Run, expect failure**
+- [x] **Step 2: Run, expect failure**
 
 Run: `pytest tests/test_rerank.py -v`
 Expected: FAIL.
 
-- [ ] **Step 3: Implement rerank.py**
+- [x] **Step 3: Implement rerank.py**
 
 `src/qa_agent/retrieval/rerank.py`:
 
@@ -2064,7 +2064,6 @@ async def cohere_rerank(
         query=query,
         documents=docs,
         top_n=min(top_k, len(candidates)),
-        return_documents=False,
     )
     out: list[Candidate] = []
     for r in resp.results:
@@ -2073,12 +2072,12 @@ async def cohere_rerank(
     return out
 ```
 
-- [ ] **Step 4: Run tests**
+- [x] **Step 4: Run tests**
 
 Run: `pytest tests/test_rerank.py -v`
 Expected: PASS.
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add src/qa_agent/retrieval/rerank.py tests/test_rerank.py
