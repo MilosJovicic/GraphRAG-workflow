@@ -1202,7 +1202,7 @@ git commit -m "feat(cypher): add fulltext (BM25) lookup templates per searchable
 - Create: `src/qa_agent/cypher/expand_navigates_to.cypher`
 - Create: `src/qa_agent/cypher/hydrate_nodes.cypher`
 
-- [ ] **Step 1: Write expand_siblings.cypher**
+- [x] **Step 1: Write expand_siblings.cypher**
 
 For Chunk/CodeBlock/Callout/TableRow seeds: find siblings via the parent Section.
 
@@ -1230,7 +1230,7 @@ RETURN
 LIMIT $cap
 ```
 
-- [ ] **Step 2: Write expand_parent_page.cypher**
+- [x] **Step 2: Write expand_parent_page.cypher**
 
 ```cypher
 UNWIND $seeds AS seed
@@ -1251,7 +1251,7 @@ LIMIT $cap
 
 Note: Page nodes are skipped by the upstream pipeline so they have no `indexed_text` / `embedding`. We synthesize fallback values from `title`/`description` so they're still usable as evidence.
 
-- [ ] **Step 3: Write expand_links.cypher**
+- [x] **Step 3: Write expand_links.cypher**
 
 ```cypher
 UNWIND $seeds AS seed
@@ -1272,7 +1272,7 @@ RETURN
 LIMIT $cap
 ```
 
-- [ ] **Step 4: Write expand_defines.cypher**
+- [x] **Step 4: Write expand_defines.cypher**
 
 For entity seeds (Tool/Hook/SettingKey/etc.): pull Sections that DEFINE or MENTION them. For Section seeds: pull entities they define/mention.
 
@@ -1300,7 +1300,7 @@ RETURN
 LIMIT $cap
 ```
 
-- [ ] **Step 5: Write expand_navigates_to.cypher**
+- [x] **Step 5: Write expand_navigates_to.cypher**
 
 ```cypher
 UNWIND $seeds AS seed
@@ -1319,7 +1319,7 @@ RETURN
 LIMIT $cap
 ```
 
-- [ ] **Step 6: Write hydrate_nodes.cypher**
+- [x] **Step 6: Write hydrate_nodes.cypher**
 
 Used by tests / debug paths to fetch full node records by id (regardless of label):
 
@@ -1335,12 +1335,12 @@ RETURN
   COALESCE(n.text, n.description, n.title, n.name) AS raw_text
 ```
 
-- [ ] **Step 7: Verify cypher safety test still passes**
+- [x] **Step 7: Verify cypher safety test still passes**
 
 Run: `pytest tests/test_cypher_safety.py -v`
 Expected: PASS.
 
-- [ ] **Step 8: Commit**
+- [x] **Step 8: Commit**
 
 ```bash
 git add src/qa_agent/cypher/expand_*.cypher src/qa_agent/cypher/hydrate_nodes.cypher
