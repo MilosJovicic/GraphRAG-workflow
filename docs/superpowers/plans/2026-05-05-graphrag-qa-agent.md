@@ -2829,7 +2829,7 @@ git commit -m "feat(activities): add rerank activity with 4xx non-retryable mapp
 **Files:**
 - Create: `src/qa_agent/activities/generate.py`
 
-- [ ] **Step 1: Implement the activity**
+- [x] **Step 1: Implement the activity**
 
 `src/qa_agent/activities/generate.py`:
 
@@ -2889,12 +2889,12 @@ async def generate_answer(req: GenerateRequest) -> QAResponse:
         )
 ```
 
-- [ ] **Step 2: Smoke import**
+- [x] **Step 2: Smoke import**
 
 Run: `python -c "from qa_agent.activities.generate import generate_answer; print(generate_answer.__name__)"`
 Expected: prints `generate_answer`.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/qa_agent/activities/generate.py
