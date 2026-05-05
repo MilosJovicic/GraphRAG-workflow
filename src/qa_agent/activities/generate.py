@@ -66,5 +66,5 @@ async def generate_answer(req: GenerateRequest) -> QAResponse:
             plan=req.plan,
             latency_ms={},
             fallback_used=False,
-            no_results=False,
+            no_results=not citations,
         )

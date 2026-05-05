@@ -3641,7 +3641,7 @@ git commit -m "test(smoke): add integration-marked recall@8 smoke against eval s
 
 **Files:** none new — this is operational verification.
 
-- [ ] **Step 1: Start dependencies**
+- [x] **Step 1: Start dependencies**
 
 In separate terminals:
 
@@ -3657,7 +3657,7 @@ ollama pull dengcao/Qwen3-Embedding-0.6B:Q8_0   # or whichever tag matches 1024-
 neo4j console      # or your existing Neo4j launcher
 ```
 
-- [ ] **Step 2: Verify env**
+- [x] **Step 2: Verify env**
 
 ```bash
 python -c "from qa_agent.config import get_settings; s = get_settings(); print('ok', s.embedding_model, s.cohere_rerank_model, s.gemini_model)"
@@ -3665,7 +3665,7 @@ python -c "from qa_agent.config import get_settings; s = get_settings(); print('
 
 Expected: prints `ok` plus the three model names. If it raises, fix the missing env var.
 
-- [ ] **Step 3: Run a query end-to-end via CLI**
+- [x] **Step 3: Run a query end-to-end via CLI**
 
 ```bash
 python -m qa_agent.worker          # Terminal 4
@@ -3674,7 +3674,7 @@ python -m qa_agent.starter "How do I configure the Bash tool's permission mode?"
 
 Expected: JSON response with `answer`, `citations` (≥1), and `latency_ms` populated. `fallback_used: false`, `no_results: false`.
 
-- [ ] **Step 4: Run a question that should hit the empty path**
+- [x] **Step 4: Run a question that should hit the empty path**
 
 ```bash
 python -m qa_agent.starter "What is the airspeed velocity of an unladen swallow?"
@@ -3682,7 +3682,7 @@ python -m qa_agent.starter "What is the airspeed velocity of an unladen swallow?
 
 Expected: `no_results: true`, friendly message, `citations: []`.
 
-- [ ] **Step 5: Run a question that should exercise CodeBlock retrieval**
+- [x] **Step 5: Run a question that should exercise CodeBlock retrieval**
 
 ```bash
 python -m qa_agent.starter "Show me a Python example of using the Edit tool."
@@ -3690,14 +3690,14 @@ python -m qa_agent.starter "Show me a Python example of using the Edit tool."
 
 Expected: at least one citation whose `node_label` is `CodeBlock`.
 
-- [ ] **Step 6: Inspect Temporal UI for the three runs**
+- [x] **Step 6: Inspect Temporal UI for the three runs**
 
 Open `http://localhost:8233`. Confirm:
 - Each `QAWorkflow` execution completed.
 - Activity timings are reasonable (no single activity > 10s under normal load).
 - No retries on the happy path; retries on transient Cohere/Gemini failures resolved within attempts.
 
-- [ ] **Step 7: Commit any tuning changes from observation**
+- [x] **Step 7: Commit any tuning changes from observation**
 
 If the pilot reveals an obvious tuning gap (e.g. `RERANK_TOP_K=8` is too small / too large for the kind of answers Gemini produces), adjust `.env` and/or `config.py` defaults and commit. If not, no commit needed.
 
