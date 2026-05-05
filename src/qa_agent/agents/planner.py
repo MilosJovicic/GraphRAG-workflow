@@ -5,6 +5,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from pydantic_ai import Agent
+from pydantic_ai.models.google import GoogleModel
+from pydantic_ai.providers.google import GoogleProvider
 
 from qa_agent.config import get_settings
 from qa_agent.schemas import Plan
@@ -19,7 +21,10 @@ def _load_prompt() -> str:
 def build_planner_agent(model: object | None = None) -> Agent[None, Plan]:
     if model is None:
         settings = get_settings()
-        model = f"google-gla:{settings.gemini_model}"
+        model = GoogleModel(
+            settings.gemini_model,
+            provider=GoogleProvider(api_key=settings.gemini_api_key),
+        )
 
     return Agent(
         model=model,
