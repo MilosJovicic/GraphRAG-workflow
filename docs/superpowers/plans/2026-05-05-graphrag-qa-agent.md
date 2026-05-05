@@ -3194,7 +3194,7 @@ git commit -m "test(workflow): add replay determinism test for QAWorkflow"
 **Files:**
 - Create: `src/qa_agent/worker.py`
 
-- [ ] **Step 1: Implement the worker**
+- [x] **Step 1: Implement the worker**
 
 `src/qa_agent/worker.py`:
 
@@ -3204,6 +3204,7 @@ from __future__ import annotations
 import asyncio
 import logfire
 from temporalio.client import Client
+from temporalio.contrib.pydantic import pydantic_data_converter
 from temporalio.worker import Worker
 
 from qa_agent.config import get_settings
@@ -3219,7 +3220,11 @@ async def main() -> None:
     s = get_settings()
     logfire.configure(service_name="qa-agent-worker", send_to_logfire=False)
 
-    client = await Client.connect(s.temporal_host, namespace=s.temporal_namespace)
+    client = await Client.connect(
+        s.temporal_host,
+        namespace=s.temporal_namespace,
+        data_converter=pydantic_data_converter,
+    )
     worker = Worker(
         client,
         task_queue=s.qa_task_queue,
@@ -3238,12 +3243,12 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-- [ ] **Step 2: Smoke check that the worker imports cleanly**
+- [x] **Step 2: Smoke check that the worker imports cleanly**
 
 Run: `python -c "import qa_agent.worker"`
 Expected: no errors.
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add src/qa_agent/worker.py
