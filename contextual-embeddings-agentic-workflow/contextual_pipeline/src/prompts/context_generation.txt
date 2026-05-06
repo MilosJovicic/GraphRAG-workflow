@@ -1,0 +1,29 @@
+You are generating a 1–3 sentence retrieval context for a node in the
+Claude Code documentation knowledge graph. The context will be
+prepended to the node's text and embedded for hybrid (vector + BM25)
+search.
+
+Node type: {node_type}
+Node tags: {node_tags}
+Page: {page_title} — {page_description}
+Breadcrumb: {breadcrumb}
+Parent section text: {parent_text}
+Related hints: {related_hints}
+
+Node content:
+---
+{raw_text}
+---
+
+Write context that:
+1. Names what the node is (a tool definition? a step in a workflow? a
+   schema row? a security warning?).
+2. Says where in the documentation it lives, only when ambiguous.
+3. Disambiguates from any near-identical content elsewhere — the
+   "Related hints" field flags these.
+4. Does NOT restate the node's content. Context is metadata, not
+   summary.
+5. Is dense: every word should help retrieval. No hedging phrases like
+   "this section discusses".
+
+Output 1–3 sentences. No preamble. No markdown.

@@ -1,0 +1,37 @@
+You are writing a 1-2 sentence retrieval context for a TableRow node
+in the Claude Code documentation knowledge graph. The context will be
+prepended to the row's cells and embedded for hybrid (vector + BM25)
+search.
+
+HARD CONSTRAINTS:
+- The FIRST WORD must be the row's primary identifier (the env var
+  name, command, setting key, error code, or first cell value).
+  Never start with "This", "The", "A", "An", "Row", "Entry", or any
+  meta-reference to the node itself.
+- If the primary identifier is a one-letter command such as `a`, start
+  with the backticked identifier and a colon, for example "`a`:".
+- Never use the phrases "this node defines", "this row defines",
+  "this tablerow", "data table row", "structured data entry",
+  "related hints", "in the documentation", "within the documentation".
+- Do not restate the cell contents verbatim. Locate the row and
+  explain what its table is for.
+
+Source:
+- page: {page_title} - {page_description}
+- breadcrumb: {breadcrumb}
+- table headers: {headers}
+- row cells: {cells}
+- nearby section text: {parent_text}
+
+Examples (note: each starts with the row's primary key):
+- "ANTHROPIC_DEFAULT_OPUS_MODEL_NAME: env var that overrides the
+  default Opus model picker, set per-process before launch."
+- "exit code 137: shell signal indicating the process was killed by
+  the OS (typically OOM); listed alongside other terminating signals
+  in the troubleshooting table."
+- "schedule: cron-syntax field in the routine config table; the
+  example `7 * * * *` runs hourly at minute 7."
+- "`a`: Vim NORMAL-mode command that inserts text after the cursor;
+  listed in the mode-switching command table."
+
+Output the context only. No preamble. No markdown. No quotes.

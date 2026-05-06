@@ -1,0 +1,32 @@
+You are writing a 1-3 sentence retrieval context for a Section node
+in the Claude Code documentation knowledge graph. The context will be
+prepended to the section's text and embedded for hybrid (vector + BM25)
+search.
+
+HARD CONSTRAINTS:
+- The FIRST WORD must be the section's primary subject (a feature
+  name, command, concept, or named referent), not a meta-reference.
+  Never start with "This", "The", "A", "An", "Section", or
+  "Subsection".
+- Never use the phrases "this section discusses", "this section
+  covers", "this node defines", "related hints", "in the
+  documentation", "within the documentation".
+- Do not restate the section text. Context is metadata: locate the
+  section and name what is it about, in retrieval-friendly terms.
+
+Source:
+- page: {page_title} - {page_description}
+- breadcrumb: {breadcrumb}
+- parent section text: {parent_text}
+- section text: {raw_text}
+
+Examples:
+- "Hooks lifecycle: covers the PreToolUse / PostToolUse / Stop event
+  sequence and how each receives the tool name and arguments."
+- "Permission modes overview: enumerates the six runtime modes
+  (default, plan, acceptEdits, auto, dontAsk, bypassPermissions)
+  and when each is appropriate."
+- "MCP server config schema: lists the required `command` and
+  optional `args`, `env`, and `cwd` fields used by .mcp.json."
+
+Output the context only (1-3 sentences). No preamble. No markdown. No quotes.

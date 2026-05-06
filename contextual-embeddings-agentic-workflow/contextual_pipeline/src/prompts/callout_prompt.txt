@@ -1,0 +1,32 @@
+You are writing a 1-2 sentence retrieval context for a Callout node
+(an inline note, warning, or tip) in the Claude Code documentation
+knowledge graph. The context will be prepended to the callout body and
+embedded for hybrid (vector + BM25) search.
+
+HARD CONSTRAINTS:
+- The FIRST WORD must be a content-bearing noun or named referent
+  drawn from the callout body or parent_text (e.g., "Permissions",
+  "MCP", "Bash"). Never start with "This", "The", "A", "An",
+  "Callout", "Note", or any meta-reference to the node itself.
+- Resolve pronouns ("it", "this approach", "the response") to the
+  concrete referent from `parent_text`.
+- Never use the phrases "this callout highlights", "this note",
+  "related hints", "in the documentation", "within the documentation".
+- Callout kind ({callout_kind}) sets tone but is not the subject.
+
+Source:
+- page: {page_title} - {page_description}
+- breadcrumb: {breadcrumb}
+- callout kind: {callout_kind}
+- parent section text: {parent_text}
+- callout body: {raw_text}
+
+Examples:
+- "MCP server timeouts: warns that long-running tools exceeding the
+  60s tool-call ceiling are killed without partial results."
+- "Bash tool permissions: tip that the allowedTools regex must escape
+  shell metacharacters or the pattern silently fails to match."
+- "Token budgets: cautions readers that the context window includes
+  tool results, so verbose tools shorten the effective conversation."
+
+Output the context only. No preamble. No markdown. No quotes.

@@ -1,0 +1,51 @@
+You are writing a 1-2 sentence retrieval context for a {node_type} node
+named "{name}" in the Claude Code documentation knowledge graph. The
+context will be prepended to the node's text and embedded for hybrid
+(vector + BM25) search.
+
+HARD CONSTRAINTS:
+- The FIRST WORD must be exactly: "{name}:" (the entity name followed
+  by a colon). Never start with "This", "The", "A", "An", or any
+  meta-reference to the node itself.
+- Never use the phrases "this node defines", "this section discusses",
+  "this callout highlights", "related hints", "in the documentation",
+  "within the documentation".
+- Do not invent modes, options, or sibling entities not present in the
+  source fields below.
+- For PermissionMode nodes, include the unique operational role from
+  `where defined` / `definition section text`; do not merely repeat
+  "Reads only". PermissionMode nodes must describe only the selected
+  mode and MUST NOT contrast against sibling modes. In particular,
+  default must say baseline/session-start read-only mode, plan must say
+  EnterPlanMode read-only planning state for approval-before-edit or
+  implementation proposals, and bypassPermissions must mention protected
+  paths.
+
+Required structure:
+- Sentence 1: "{name}: " followed by one clause naming what it is
+  (drawn from `description`).
+- Sentence 2 (optional): names a sibling it contrasts with or pairs
+  with, drawn from `siblings`. Skip if no meaningful contrast exists.
+  For PermissionMode, always skip sibling contrast sentences.
+
+Source:
+- name: {name}
+- description: {description}
+- where mentioned: {breadcrumb}
+- where defined: {defined_in}
+- definition section text: {definition_text}
+- siblings of same type: {siblings}
+
+Examples:
+- "Bash: shell-command tool requiring permission. Most-referenced
+  tool across the docs; companion to the auto-approve allowedTools
+  pattern."
+- "default: baseline permission mode at session start, granting
+  read-only filesystem access for passive project inspection."
+- "plan: EnterPlanMode read-only planning state for codebase
+  exploration and approval-before-edit implementation proposals."
+- "PostToolUse: hook event firing after a tool call succeeds.
+  Companion to PreToolUse (the gate before a call) and Stop (which
+  fires when the agent completes its turn)."
+
+Output the context only. No preamble. No markdown. No quotes around it.

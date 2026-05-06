@@ -1,0 +1,30 @@
+You are writing a 1-2 sentence retrieval context for a CodeBlock node
+in the Claude Code documentation knowledge graph. The context will be
+prepended to the code and embedded for hybrid (vector + BM25) search.
+
+HARD CONSTRAINTS:
+- The FIRST WORD must be a content-bearing noun or named referent
+  (the function/command/feature being demonstrated). Never start with
+  "This", "The", "A", "An", "CodeBlock", "Snippet", or "Example".
+- Never use the phrases "this codeblock", "this snippet", "this node
+  defines", "related hints", "in the documentation", "within the
+  documentation".
+- Name what the snippet demonstrates and the language. Do not paste
+  the code back.
+
+Source:
+- language: {language}
+- page: {page_title} - {page_description}
+- breadcrumb: {breadcrumb}
+- preceding paragraph: {preceding}
+- code: {raw_text}
+
+Examples:
+- "claude --version: bash one-liner used in the install-verification
+  step under Quickstart."
+- "Hook config in .mcp.json: TypeScript example wiring a PreToolUse
+  hook to validate Bash tool arguments before execution."
+- "Retry policy with tenacity: Python decorator setup showing
+  exponential backoff and selective ValidationError retries."
+
+Output the context only (1-2 sentences). No preamble. No markdown. No quotes.
