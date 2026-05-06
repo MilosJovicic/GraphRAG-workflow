@@ -101,7 +101,6 @@ sequenceDiagram
 | [`contextual_pipeline/scripts/`](contextual_pipeline/scripts/) | Smoke, pilot, and verification scripts. |
 | [`contextual_pipeline/tests/`](contextual_pipeline/tests/) | Contract, routing, Cypher safety, retry, and workflow tests. |
 | [`contextual_pipeline/pyproject.toml`](contextual_pipeline/pyproject.toml) | Python package metadata and dependencies. |
-| [`docs/superpowers/plans/`](docs/superpowers/plans/) | Historical implementation plans for this segment. |
 
 ## Quickstart
 
