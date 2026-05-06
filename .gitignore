@@ -2,6 +2,7 @@
 .env
 .env.*
 CLAUDE.md
+.superpowers/
 
 # Python environments and caches
 .venv/
