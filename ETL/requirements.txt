@@ -1,0 +1,4 @@
+markdown-it-py==3.0.0
+mdit-py-plugins==0.4.2
+linkify-it-py==2.0.3
+neo4j==5.28.1
