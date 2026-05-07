@@ -142,3 +142,34 @@ async def test_expand_passes_null_language_when_unset():
     args, _ = mocked_run.call_args
     params = args[1]
     assert params["language"] is None
+
+
+@pytest.mark.asyncio
+async def test_expand_code_examples_marks_origin_with_seed_id():
+    seeds = [_seed("Tool:Edit", label="Tool")]
+    patterns = [
+        ExpansionPattern(name="code_examples", max_per_seed=4, language="python")
+    ]
+    rows = [
+        {
+            "node_id": "dd7564204c2946d7",
+            "node_label": "CodeBlock",
+            "indexed_text": "[python] allowed_tools=['Edit']",
+            "raw_text": "allowed_tools=['Edit']",
+            "url": None,
+            "anchor": None,
+            "breadcrumb": "Quickstart > Step 3",
+            "title": "[python] Quickstart > Step 3",
+            "seed_id": "Tool:Edit",
+        },
+    ]
+
+    with patch(
+        "qa_agent.retrieval.expansion.run_cypher",
+        new=AsyncMock(return_value=rows),
+    ):
+        out = await expand(seeds, patterns, total_cap=20)
+
+    cb = next(c for c in out if c.node_id == "dd7564204c2946d7")
+    assert cb.expansion_origin == "code_examples:Tool:Edit"
+    assert cb.node_label == "CodeBlock"
