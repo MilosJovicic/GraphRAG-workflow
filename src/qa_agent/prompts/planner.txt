@@ -32,6 +32,7 @@ After hybrid retrieval finds seed candidates, you may request expansion patterns
 - links: from a Section seed, follow LINKS_TO and LINKS_TO_PAGE. Useful for related content.
 - defines: from an entity seed, fetch Sections that DEFINE or MENTION it, or vice versa.
 - navigates_to: from a Section seed, follow NAVIGATES_TO cross-page navigation tables.
+- code_examples: from an entity seed (Tool, Hook, SettingKey, PermissionMode, Provider, MessageType), fetch CodeBlocks that live in Sections defining or mentioning the entity, plus those Sections' subsections. Results are ranked DEFINES > MENTIONS, then by section depth, so true examples beat incidental mentions. Optional language filter on the pattern. Use for "show me an example" or "code for X" questions.
 
 # Output Schema
 
@@ -47,10 +48,12 @@ You must produce JSON matching this shape exactly:
     }
   ],
   "expansion_patterns": [
-    {"name": "<pattern>", "max_per_seed": 3}
+    {"name": "<pattern>", "max_per_seed": 3, "language": "<language?>"}
   ],
   "notes": "<one-line rationale>"
 }
+
+"language" is optional and consumed only by the code_examples pattern.
 
 Rules:
 - Emit 1 to 4 sub_queries. Use multiple only when the question genuinely covers multiple distinct topics or asks for a comparison.
@@ -81,13 +84,15 @@ User: Show me a Python example of using the Edit tool.
   "sub_queries": [
     {
       "text": "Edit tool Python example",
-      "target_labels": ["CodeBlock", "Section"],
+      "target_labels": ["Tool", "CodeBlock", "Section"],
       "filters": {"language": "python"},
       "bm25_keywords": ["Edit", "python"]
     }
   ],
-  "expansion_patterns": [{"name": "siblings", "max_per_seed": 2}],
-  "notes": "code example question; siblings pull surrounding context"
+  "expansion_patterns": [
+    {"name": "code_examples", "max_per_seed": 6, "language": "python"}
+  ],
+  "notes": "code-example question; entity_lookup seeds Tool:Edit, code_examples traverses to its codeblocks"
 }
 
 User: What are all the hook events and when do they fire?
