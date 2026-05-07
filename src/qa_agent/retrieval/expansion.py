@@ -61,6 +61,7 @@ async def expand(
             {
                 "seeds": seed_payload,
                 "cap": pattern.max_per_seed * len(seeds),
+                "language": pattern.language,
             },
         )
         for row in rows:
