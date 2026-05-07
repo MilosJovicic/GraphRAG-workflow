@@ -25,7 +25,7 @@ pytestmark = [
 
 
 def _load_eval():
-    path = Path(__file__).parent / "fixtures" / "eval_questions.yaml"
+    path = Path(__file__).resolve().parents[1] / "ragas_evals" / "gold_questions.yaml"
     return yaml.safe_load(path.read_text(encoding="utf-8"))
 
 
@@ -49,7 +49,7 @@ async def test_recall_at_8(entry):
     cited_ids = {citation.node_id for citation in response.citations}
     retrieved_ids = {candidate.node_id for candidate in (response.retrieved or [])}
     seen = cited_ids | retrieved_ids
-    expected = set(entry["expected_ids"])
+    expected = set(entry["expected_context_ids"])
     overlap = seen & expected
     assert overlap, (
         f"Q[{entry['id']}] {entry['question']!r}: none of expected={expected} "
