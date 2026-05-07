@@ -49,6 +49,16 @@ def test_expansion_pattern_accepts_code_examples_name():
     assert pattern.name == "code_examples"
 
 
+def test_expansion_pattern_max_per_seed_accepts_8():
+    pattern = ExpansionPattern(name="code_examples", max_per_seed=8)
+    assert pattern.max_per_seed == 8
+
+
+def test_expansion_pattern_max_per_seed_rejects_9():
+    with pytest.raises(ValidationError):
+        ExpansionPattern(name="code_examples", max_per_seed=9)
+
+
 def test_qa_request_min_length():
     with pytest.raises(ValidationError):
         QARequest(question="")
