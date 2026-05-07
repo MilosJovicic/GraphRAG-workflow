@@ -8,7 +8,13 @@ responsible for converting the dicts to cl.Text objects.
 
 from __future__ import annotations
 
-from app import render_qa_response
+import json
+
+import httpx
+import pytest
+import respx
+
+from app import call_qa_api, render_qa_response
 
 
 def test_render_qa_response_with_citations_uses_title():
@@ -92,3 +98,47 @@ def test_render_qa_response_no_results_returns_empty_elements():
 
     assert content == payload["answer"]
     assert elements == []
+
+
+@pytest.mark.asyncio
+async def test_call_qa_api_returns_payload_on_success():
+    payload = {
+        "answer": "ok",
+        "citations": [],
+        "no_results": False,
+        "fallback_used": False,
+        "plan": {"sub_queries": [], "expansion_patterns": [], "notes": ""},
+        "latency_ms": {},
+    }
+
+    async with respx.mock(base_url="http://qa") as router:
+        router.post("/ask").respond(200, json=payload)
+        async with httpx.AsyncClient() as client:
+            result = await call_qa_api(client, "http://qa", "How do I X?")
+
+    assert result == payload
+
+
+@pytest.mark.asyncio
+async def test_call_qa_api_raises_on_5xx():
+    async with respx.mock(base_url="http://qa") as router:
+        router.post("/ask").respond(500, json={"error": "boom"})
+        async with httpx.AsyncClient() as client:
+            with pytest.raises(httpx.HTTPStatusError):
+                await call_qa_api(client, "http://qa", "How do I X?")
+
+
+@pytest.mark.asyncio
+async def test_call_qa_api_sends_question_in_json_body():
+    async with respx.mock(base_url="http://qa") as router:
+        route = router.post("/ask").respond(
+            200,
+            json={"answer": "x", "citations": [], "no_results": False},
+        )
+        async with httpx.AsyncClient() as client:
+            await call_qa_api(client, "http://qa", "the question")
+
+        assert route.called
+        sent = route.calls.last.request
+        assert sent.headers["content-type"].startswith("application/json")
+        assert json.loads(sent.content) == {"question": "the question"}

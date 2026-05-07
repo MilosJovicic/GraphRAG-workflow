@@ -11,10 +11,27 @@ from __future__ import annotations
 import logging
 import os
 
+import httpx
+
 QA_API_URL = os.environ.get("QA_API_URL", "http://qa-api:5000")
 QA_API_TIMEOUT = float(os.environ.get("QA_API_TIMEOUT", "120"))
 
 log = logging.getLogger(__name__)
+
+
+async def call_qa_api(client: httpx.AsyncClient, url: str, question: str) -> dict:
+    """POST one question to the Flask QA API and return the parsed JSON body.
+
+    Raises ``httpx.HTTPStatusError`` on non-2xx and other ``httpx`` exceptions
+    on transport failures.
+    """
+    resp = await client.post(
+        f"{url}/ask",
+        json={"question": question},
+        timeout=QA_API_TIMEOUT,
+    )
+    resp.raise_for_status()
+    return resp.json()
 
 
 def render_qa_response(payload: dict) -> tuple[str, list[dict]]:
