@@ -22,13 +22,13 @@ flowchart LR
 
 ```mermaid
 flowchart TD
-    docs["Source documents"] --> etl["ETL pipeline"]
-    etl --> graph["Graph-ready artifacts"]
-    graph --> contextual["Contextual embedding workflow"]
-    contextual --> indexes["Vector and full-text retrieval indexes"]
-    indexes --> agent["GraphRAG Q&A agent"]
-    graph --> agent
-    agent --> evals["RAGAS evaluation harness"]
+    sourceDocs["Source documents"] --> etlPipeline["ETL pipeline"]
+    etlPipeline --> graphArtifacts["Graph-ready artifacts"]
+    graphArtifacts --> contextualWorkflow["Contextual embedding workflow"]
+    contextualWorkflow --> retrievalIndexes["Vector and full-text retrieval indexes"]
+    retrievalIndexes --> qaAgent["GraphRAG Q&A agent"]
+    graphArtifacts --> qaAgent
+    qaAgent --> evalHarness["RAGAS evaluation harness"]
 ```
 
 ## Segments
