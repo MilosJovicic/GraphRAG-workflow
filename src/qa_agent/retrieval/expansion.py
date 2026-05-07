@@ -11,6 +11,7 @@ _PATTERN_TEMPLATE = {
     "links": "expand_links.cypher",
     "defines": "expand_defines.cypher",
     "navigates_to": "expand_navigates_to.cypher",
+    "code_examples": "expand_code_examples.cypher",
 }
 
 

@@ -91,3 +91,18 @@ async def test_expand_no_patterns_returns_seeds_only():
     out = await expand(seeds, [], total_cap=20)
 
     assert [c.node_id for c in out] == ["s1"]
+
+
+@pytest.mark.asyncio
+async def test_expand_dispatches_code_examples_to_correct_template():
+    seeds = [_seed("Tool:Edit", label="Tool")]
+    patterns = [ExpansionPattern(name="code_examples", max_per_seed=4)]
+
+    with patch(
+        "qa_agent.retrieval.expansion.run_cypher",
+        new=AsyncMock(return_value=[]),
+    ) as mocked_run:
+        await expand(seeds, patterns, total_cap=20)
+
+    args, _ = mocked_run.call_args
+    assert args[0] == "expand_code_examples.cypher"
