@@ -48,12 +48,15 @@ WHERE (e.id = seed.node_id OR e.name = seed.node_id OR e.key = seed.node_id)
   AND any(lbl IN labels(e)
           WHERE lbl IN ['Tool','Hook','SettingKey','PermissionMode',
                         'Provider','MessageType'])
-MATCH (parent:Section)-[:DEFINES|MENTIONS]->(e)
-MATCH (parent)-[:HAS_SUBSECTION*0..]->(s:Section)
+MATCH (parent:Section)-[r:DEFINES|MENTIONS]->(e)
+MATCH path = (parent)-[:HAS_SUBSECTION*0..]->(s:Section)
 MATCH (s)-[:CONTAINS_CODE]->(cb:CodeBlock)
 WHERE ($language IS NULL OR cb.language = $language)
 OPTIONAL MATCH (p:Page)-[:HAS_SECTION]->(:Section)-[:HAS_SUBSECTION*0..]->(s)
-WITH seed.node_id AS seed_id, cb, s, p
+WITH seed.node_id AS seed_id, cb, s, p,
+     CASE type(r) WHEN 'DEFINES' THEN 2 ELSE 1 END AS rel_rank,
+     length(path) AS section_depth,
+     COALESCE(cb.position, 999)  AS cb_position
 RETURN
   cb.id            AS node_id,
   'CodeBlock'      AS node_label,
@@ -64,6 +67,7 @@ RETURN
   s.breadcrumb     AS breadcrumb,
   COALESCE('[' + cb.language + '] ' + s.breadcrumb, s.breadcrumb) AS title,
   seed_id          AS seed_id
+ORDER BY rel_rank DESC, section_depth ASC, cb_position ASC, cb.id ASC
 LIMIT $cap
 ```
 
@@ -74,20 +78,52 @@ Notes:
 - The pattern is a no-op for non-entity seeds: the first `MATCH (e)` filter
   eliminates Section/CodeBlock seeds before any traversal.
 - Language filter is optional; when null the pattern returns all languages.
+- **Ranking** (added after live probe found gold IDs at positions 5 and 7
+  in unordered cap=10 results):
+  - `rel_rank`: DEFINES (2) ranks above MENTIONS (1). True examples beat
+    incidental mentions.
+  - `section_depth`: shallower path from the entity-defining Section wins —
+    a codeblock in the section that DEFINES the entity beats one nested two
+    subsections deeper.
+  - `cb_position`: when the CodeBlock has a `position` property (sequence
+    within its section), earlier blocks win. `999` is a fallback so missing
+    `position` does not kill the row.
+  - `cb.id ASC`: final tie-break for deterministic ordering.
+- Verify during implementation that the `position` property exists on
+  CodeBlock nodes; if not, drop that line and rely on the other ordering
+  keys. Do not change the design — this is a graceful-degradation tie-break.
 
-### Schema change — `ExpansionPattern.language`
+### Schema changes — `ExpansionName` and `ExpansionPattern`
 
-```python
-class ExpansionPattern(BaseModel):
-    name: str
-    max_per_seed: int = 3
-    language: str | None = None
-```
+Three coordinated edits in `schemas.py`:
 
-`language` is consumed only by `code_examples`; other patterns ignore it. This
-keeps each pattern self-contained — "examples in Python" and "examples in
-TypeScript" can be two separate emitted patterns without touching workflow
-state.
+1. **Extend the `ExpansionName` Literal** (line 33) so pydantic accepts the
+   new pattern name. Without this, planner output that includes
+   `code_examples` will fail validation and the workflow will fall back.
+
+   ```python
+   ExpansionName = Literal[
+       "siblings", "parent_page", "links",
+       "defines", "navigates_to", "code_examples",
+   ]
+   ```
+
+2. **Raise the `max_per_seed` upper bound** (line 61) from `le=5` to `le=8`
+   so the planner can request more codeblocks per entity for example queries
+   (defense-in-depth on top of the new ORDER BY).
+
+3. **Add the optional `language` field**:
+
+   ```python
+   class ExpansionPattern(BaseModel):
+       name: ExpansionName
+       max_per_seed: int = Field(default=3, ge=1, le=8)
+       language: str | None = None
+   ```
+
+   `language` is consumed only by `code_examples`; other patterns ignore it.
+   "Examples in Python" and "examples in TypeScript" can be two separate
+   emitted patterns without touching workflow state.
 
 ### Expansion wiring — `retrieval/expansion.py`
 
@@ -107,16 +143,33 @@ so the existing four patterns are untouched.
 
 ### Planner prompt update — `prompts/planner.txt`
 
-Two edits:
+Three edits:
 
-1. Add a bullet under "Graph Expansion Patterns":
+1. **Update the JSON output schema block** (currently shows
+   `{"name": "<pattern>", "max_per_seed": 3}` — the planner LLM follows this
+   schema description, not just the example). Replace with:
+
+   ```json
+   {
+     "expansion_patterns": [
+       {"name": "<pattern>", "max_per_seed": 3, "language": "<language?>"}
+     ]
+   }
+   ```
+
+   Add a one-line clarification: `"language" is optional and consumed only
+   by the code_examples pattern.`
+
+2. Add a bullet under "Graph Expansion Patterns":
 
    > `code_examples`: from an entity seed (Tool, Hook, SettingKey, ...), fetch
    > CodeBlocks that live in Sections defining or mentioning the entity, plus
-   > those Sections' subsections. Optional `language` filter on the pattern.
-   > Use for "show me an example" or "code for X" questions.
+   > those Sections' subsections. Results are ranked DEFINES > MENTIONS, then
+   > by section depth, so true examples beat incidental mentions. Optional
+   > `language` filter on the pattern. Use for "show me an example" or
+   > "code for X" questions.
 
-2. Replace the q3 example so it includes the entity label and the new
+3. Replace the q3 example so it includes the entity label and the new
    expansion:
 
    ```json
@@ -128,14 +181,19 @@ Two edits:
        "bm25_keywords": ["Edit", "python"]
      }],
      "expansion_patterns": [
-       {"name": "code_examples", "max_per_seed": 4, "language": "python"}
+       {"name": "code_examples", "max_per_seed": 6, "language": "python"}
      ],
      "notes": "code-example question; entity_lookup seeds Tool:Edit, code_examples traverses to its codeblocks"
    }
    ```
 
-`Tool` in `target_labels` triggers `entity_lookup`, which seeds `Tool:Edit`.
-`code_examples` then traverses from that seed.
+   `Tool` in `target_labels` triggers `entity_lookup`, which seeds
+   `Tool:Edit`. `code_examples` then traverses from that seed. `max_per_seed:
+   6` is calibrated against the live probe: the gold IDs surfaced at
+   positions 5 and 7 of the unordered probe at cap=10; with the new
+   `ORDER BY rel_rank DESC, section_depth ASC` they should rise to the top
+   of the cap=6 window, but 6 leaves margin for additional defining-Section
+   codeblocks.
 
 ## Components and isolation
 
@@ -151,26 +209,36 @@ it), so behavior for other questions is unchanged.
 
 ## Pre-implementation probe (graph verification)
 
-Before writing code, run a Cypher probe to confirm the gold codeblocks are
-reachable through the proposed traversal. Without this, we'd build the pattern
-on a path that may not exist for the very questions it targets.
+Status: **completed**. Both gold codeblocks `dd7564204c2946d7` and
+`5f644bc9ef3abd5f` are reachable through `Tool:Edit ← DEFINES|MENTIONS ←
+Section → HAS_SUBSECTION*0.. → Section → CONTAINS_CODE → CodeBlock`, and both
+are tagged `language='python'`, so the language filter does not exclude them.
 
-Probe:
+The probe also revealed the ordering risk addressed above: with
+`language=python` and cap=10, the gold IDs landed at positions 5 and 7
+*without* `ORDER BY`. The `ORDER BY rel_rank DESC, section_depth ASC,
+cb_position ASC` on the new template, plus `max_per_seed: 6` in the planner,
+together close that gap.
+
+Re-run probe to verify after implementation:
 
 ```cypher
-MATCH (cb:CodeBlock) WHERE cb.id IN ['dd7564204c2946d7','5f644bc9ef3abd5f']
-MATCH (s:Section)-[:CONTAINS_CODE]->(cb)
-OPTIONAL MATCH (parent:Section)-[:HAS_SUBSECTION*0..]->(s)
-OPTIONAL MATCH (parent)-[:DEFINES|MENTIONS]->(e:Tool {name:'Edit'})
-RETURN cb.id, s.breadcrumb, parent.breadcrumb,
-       CASE WHEN e IS NULL THEN 'no Edit link' ELSE 'reachable' END AS status
+MATCH (e:Tool {name:'Edit'})
+MATCH (parent:Section)-[r:DEFINES|MENTIONS]->(e)
+MATCH path = (parent)-[:HAS_SUBSECTION*0..]->(s:Section)
+MATCH (s)-[:CONTAINS_CODE]->(cb:CodeBlock)
+WHERE cb.language = 'python'
+WITH cb, s,
+     CASE type(r) WHEN 'DEFINES' THEN 2 ELSE 1 END AS rel_rank,
+     length(path) AS section_depth,
+     COALESCE(cb.position, 999) AS cb_position
+RETURN cb.id, s.breadcrumb, rel_rank, section_depth, cb_position
+ORDER BY rel_rank DESC, section_depth ASC, cb_position ASC, cb.id ASC
+LIMIT 10
 ```
 
-Expected: at least one of the two codeblocks resolves to `status='reachable'`
-through some ancestor section. If both come back `'no Edit link'`, the design
-needs revision — likely either lower-confidence relations (`MENTIONS` only) or
-extending the traversal to include non-Section parents — and we revisit before
-implementing.
+Acceptance: gold IDs `dd7564204c2946d7` and `5f644bc9ef3abd5f` appear in
+positions 1–6 of this output.
 
 ## Tests
 
@@ -183,12 +251,22 @@ TDD-first, all tests written and failing before any implementation:
   - Mocked `run_cypher` returning fake CodeBlock rows produces Candidate
     objects with `expansion_origin="code_examples:<seed_id>"`.
   - Pattern is invoked with cap = `max_per_seed * len(seeds)`.
-- `tests/test_schemas.py` (or extend existing) — `ExpansionPattern` accepts
-  and round-trips the optional `language` field; default is `None`.
+- `tests/test_schemas.py` (or extend existing) — three cases:
+  - `ExpansionPattern(name="code_examples", ...)` validates (regression
+    guard for the `ExpansionName` Literal extension).
+  - `ExpansionPattern(name="code_examples", max_per_seed=6, ...)` validates
+    (regression guard for the `le=8` bound bump).
+  - `ExpansionPattern` accepts and round-trips the optional `language`
+    field; default is `None`.
 - `tests/test_planner.py` — q3-shape input produces a Plan that includes
   `Tool` in `target_labels` and emits a `code_examples` pattern with
   `language='python'`. (LLM-driven, so this is an integration-style test
   that will use a small real call or a fixed mocked response.)
+- `tests/test_expand_code_examples_cypher.py` — graph-integration test
+  (gated on `QA_RUN_INTEGRATION`):
+  - Seed `Tool:Edit`, language=`python`, cap=6: the gold IDs
+    `dd7564204c2946d7` and `5f644bc9ef3abd5f` appear in positions 1–6.
+  - Seed a non-entity (Section), cap=6: returns empty (no-op guard).
 
 ## Verification
 
@@ -213,9 +291,9 @@ After implementation, re-run the live RAGAS eval. Acceptance:
 
 - **Pattern misfires on `MENTIONS`-only links.** If the entity is merely
   mentioned (not defined) in a Section, that Section's codeblocks may be only
-  loosely related to the entity. Mitigated by the planner-level decision (only
-  fires for "example" intent), the rerank step that follows expansion, and the
-  `max_per_seed` cap.
+  loosely related to the entity. Mitigated by the new `rel_rank DESC` ordering
+  (DEFINES > MENTIONS), the planner-level decision (only fires for "example"
+  intent), the rerank step that follows expansion, and the `max_per_seed` cap.
 - **Language filter too strict.** Some Edit examples may be tagged `text` or
   no language. The planner currently emits a specific language; if the gold
   blocks are not tagged, they'll be filtered out. The pre-implementation probe
