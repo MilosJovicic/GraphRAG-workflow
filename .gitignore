@@ -1,6 +1,8 @@
 # Local secrets and assistant context
 .env
 .env.*
+!.env.example
+!**/.env.example
 CLAUDE.md
 .superpowers/
 
@@ -28,3 +30,7 @@ dist/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Chainlit runtime config (auto-generated on import)
+**/.chainlit/
+chainlit.md

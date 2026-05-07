@@ -1,0 +1,174 @@
+services:
+  temporal-postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: temporal
+      POSTGRES_PASSWORD: temporal
+      POSTGRES_DB: temporal
+    volumes:
+      - temporal-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U temporal"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  temporal:
+    image: temporalio/auto-setup:1.25.2
+    environment:
+      DB: postgres12
+      DB_PORT: "5432"
+      POSTGRES_USER: temporal
+      POSTGRES_PWD: temporal
+      POSTGRES_SEEDS: temporal-postgres
+    depends_on:
+      temporal-postgres:
+        condition: service_healthy
+    ports:
+      - "7233:7233"
+    healthcheck:
+      test: ["CMD-SHELL", "tctl --address temporal:7233 cluster health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  temporal-ui:
+    image: temporalio/ui:2.30.0
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CORS_ORIGINS: http://localhost:8233
+    ports:
+      - "8233:8080"
+    depends_on:
+      temporal:
+        condition: service_healthy
+
+  neo4j-seed:
+    build: ./infra/neo4j-seed
+    environment:
+      NEO4J_DUMP_URL: ${NEO4J_DUMP_URL}
+      NEO4J_DUMP_SHA256: ${NEO4J_DUMP_SHA256}
+    volumes:
+      - neo4j-data:/data
+    restart: "no"
+
+  neo4j:
+    # Enterprise edition is required because the published dump uses the
+    # block storage format, which is Enterprise-only. NEO4J_ACCEPT_LICENSE
+    # _AGREEMENT=eval accepts the 30-day evaluation license, which is
+    # appropriate for the local-only intent of this stack.
+    image: neo4j:2026.04-enterprise
+    environment:
+      NEO4J_AUTH: neo4j/${NEO4J_PASSWORD}
+      NEO4J_ACCEPT_LICENSE_AGREEMENT: eval
+      # The published dump carries its own auth state, including any
+      # rate-limiter lockouts. For this local-only stack we disable
+      # auth entirely so bring-up is deterministic; bolt connections
+      # from qa-api/qa-worker accept any user/password.
+      NEO4J_dbms_security_auth__enabled: "false"
+      NEO4J_server_memory_pagecache_size: 512M
+      NEO4J_server_memory_heap_initial__size: 512M
+      NEO4J_server_memory_heap_max__size: 1G
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j-data:/data
+    depends_on:
+      neo4j-seed:
+        condition: service_completed_successfully
+    healthcheck:
+      # Use the unauthenticated HTTP discovery endpoint instead of
+      # cypher-shell. Cypher-based healthchecks count against Neo4j's
+      # built-in failed-auth rate limiter and can lock out the neo4j
+      # user during startup or when the password env is wrong.
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:7474 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 30s
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    healthcheck:
+      test: ["CMD-SHELL", "ollama list > /dev/null 2>&1 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+
+  ollama-seed:
+    build: ./infra/ollama-seed
+    environment:
+      OLLAMA_URL: http://ollama:11434
+      EMBEDDING_MODEL: ${EMBEDDING_MODEL}
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
+
+  qa-api:
+    build:
+      context: ./graphrag-agent-workflow
+    env_file: .env
+    environment:
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+      TEMPORAL_HOST: temporal:7233
+      TEMPORAL_NAMESPACE: default
+      OLLAMA_BASE_URL: http://ollama:11434/v1
+    command: ["python", "-m", "qa_agent.api"]
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      temporal:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:5000/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+
+  qa-worker:
+    build:
+      context: ./graphrag-agent-workflow
+    env_file: .env
+    environment:
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD}
+      TEMPORAL_HOST: temporal:7233
+      TEMPORAL_NAMESPACE: default
+      OLLAMA_BASE_URL: http://ollama:11434/v1
+    command: ["python", "-m", "qa_agent.worker"]
+    depends_on:
+      neo4j:
+        condition: service_healthy
+      temporal:
+        condition: service_healthy
+      ollama:
+        condition: service_healthy
+
+  chainlit:
+    build:
+      context: ./chat
+    environment:
+      QA_API_URL: http://qa-api:5000
+    ports:
+      - "8000:8000"
+    depends_on:
+      qa-api:
+        condition: service_healthy
+
+volumes:
+  temporal-postgres-data:
+  neo4j-data:
+  ollama-data:

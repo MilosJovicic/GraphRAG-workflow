@@ -8,6 +8,7 @@ import logfire
 from temporalio.client import Client
 from temporalio.contrib.pydantic import pydantic_data_converter
 from temporalio.worker import Worker
+from temporalio.worker.workflow_sandbox import SandboxedWorkflowRunner, SandboxRestrictions
 
 from qa_agent.activities.expand import expand_graph
 from qa_agent.activities.generate import generate_answer
@@ -27,6 +28,14 @@ async def main() -> None:
         namespace=settings.temporal_namespace,
         data_converter=pydantic_data_converter,
     )
+    # Pass beartype through the sandbox's import hook. Newer beartype
+    # versions interact badly with Temporal's sandbox importer (circular
+    # import on beartype.claw._clawstate.claw_state), which the sandbox's
+    # restricted import path triggers.
+    sandbox_restrictions = SandboxRestrictions.default.with_passthrough_modules(
+        "beartype",
+    )
+
     worker = Worker(
         client,
         task_queue=settings.qa_task_queue,
@@ -39,6 +48,7 @@ async def main() -> None:
             rerank,
             generate_answer,
         ],
+        workflow_runner=SandboxedWorkflowRunner(restrictions=sandbox_restrictions),
     )
     print(
         f"qa-agent worker listening on task queue {settings.qa_task_queue!r} "
