@@ -11,6 +11,7 @@ from __future__ import annotations
 import logging
 import os
 
+import chainlit as cl
 import httpx
 
 QA_API_URL = os.environ.get("QA_API_URL", "http://qa-api:5000")
@@ -60,3 +61,28 @@ def render_qa_response(payload: dict) -> tuple[str, list[dict]]:
             }
         )
     return answer, elements
+
+
+@cl.on_chat_start
+async def on_chat_start() -> None:
+    await cl.Message(content="Ask me about Claude Code documentation.").send()
+
+
+@cl.on_message
+async def on_message(message: cl.Message) -> None:
+    async with httpx.AsyncClient() as client:
+        try:
+            payload = await call_qa_api(client, QA_API_URL, message.content)
+        except Exception:
+            log.exception("qa-api call failed")
+            await cl.Message(
+                content=(
+                    "The agent ran into a problem. Try again, or check "
+                    "`docker compose logs qa-api`."
+                )
+            ).send()
+            return
+
+    content, element_specs = render_qa_response(payload)
+    elements = [cl.Text(**spec) for spec in element_specs]
+    await cl.Message(content=content, elements=elements).send()
