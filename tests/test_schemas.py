@@ -44,6 +44,11 @@ def test_expansion_pattern_unknown_name_rejected():
         ExpansionPattern(name="bogus")  # type: ignore[arg-type]
 
 
+def test_expansion_pattern_accepts_code_examples_name():
+    pattern = ExpansionPattern(name="code_examples", max_per_seed=4)
+    assert pattern.name == "code_examples"
+
+
 def test_qa_request_min_length():
     with pytest.raises(ValidationError):
         QARequest(question="")
@@ -71,6 +76,13 @@ def test_candidate_default_scores_none():
     assert c.bm25_score is None
     assert c.vector_score is None
     assert c.rrf_score is None
+
+
+def test_candidate_normalizes_missing_text_fields():
+    c = Candidate(node_id="n1", node_label="Section", indexed_text=None, raw_text=None)
+
+    assert c.indexed_text == ""
+    assert c.raw_text == ""
 
 
 def test_citation_accepts_page_label_from_expansion():

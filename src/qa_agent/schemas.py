@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Literal
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 
 NODE_LABELS = [
     "Section",
@@ -30,7 +30,14 @@ NodeLabel = Literal[
     "MessageType",
     "Provider",
 ]
-ExpansionName = Literal["siblings", "parent_page", "links", "defines", "navigates_to"]
+ExpansionName = Literal[
+    "siblings",
+    "parent_page",
+    "links",
+    "defines",
+    "navigates_to",
+    "code_examples",
+]
 
 
 class QARequest(BaseModel):
@@ -94,6 +101,11 @@ class Candidate(BaseModel):
     rrf_score: float | None = None
     rerank_score: float | None = None
     expansion_origin: str | None = None
+
+    @field_validator("indexed_text", "raw_text", mode="before")
+    @classmethod
+    def normalize_missing_text(cls, value: str | None) -> str:
+        return value or ""
 
 
 class ExpandRequest(BaseModel):
