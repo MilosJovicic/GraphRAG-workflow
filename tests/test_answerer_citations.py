@@ -1,4 +1,7 @@
+from pydantic_ai.models.openai import OpenAIChatModel
+
 from qa_agent.agents.answerer import extract_citation_ids, validate_citations
+from qa_agent.agents.answerer import build_answerer_agent
 
 
 def test_extract_citation_ids_simple():
@@ -46,3 +49,21 @@ def test_validate_citations_flags_used_but_not_in_text():
     assert ok is False
     assert missing == [2]
     assert out_of_range == []
+
+
+def test_answerer_default_model_uses_openai_small_model(monkeypatch):
+    monkeypatch.setenv("OPENAI_API_KEY", "x")
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
+    monkeypatch.setenv("NEO4J_URI", "x")
+    monkeypatch.setenv("NEO4J_USER", "x")
+    monkeypatch.setenv("NEO4J_PASSWORD", "x")
+    monkeypatch.setenv("OLLAMA_BASE_URL", "x")
+    monkeypatch.setenv("EMBEDDING_MODEL", "x")
+
+    from qa_agent.config import get_settings
+
+    get_settings.cache_clear()
+    agent = build_answerer_agent()
+
+    assert isinstance(agent.model, OpenAIChatModel)
+    assert agent.model.model_name == "gpt-5.4-mini"

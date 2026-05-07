@@ -14,7 +14,7 @@ def client(monkeypatch):
     monkeypatch.setenv("OLLAMA_BASE_URL", "x")
     monkeypatch.setenv("EMBEDDING_MODEL", "x")
     monkeypatch.setenv("COHERE_API_KEY", "x")
-    monkeypatch.setenv("GEMINI_API_KEY", "x")
+    monkeypatch.setenv("OPENAI_API_KEY", "x")
 
     from qa_agent.config import get_settings
 

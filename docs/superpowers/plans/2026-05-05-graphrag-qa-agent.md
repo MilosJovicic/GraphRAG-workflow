@@ -1,12 +1,12 @@
-# GraphRAG Q&A Agent Implementation Plan
+﻿# GraphRAG Q&A Agent Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Build a question-answering agent over the existing Claude Code documentation knowledge graph in Neo4j, using Temporal orchestration, PydanticAI agents (planner + answerer), Qwen 3 0.6B embeddings via Ollama, BM25 + vector hybrid retrieval fused via Reciprocal Rank Fusion, graph expansion over the existing schema, Cohere reranking, and Gemini Flash for generation, exposed via a Flask `POST /ask` endpoint.
+**Goal:** Build a question-answering agent over the existing Claude Code documentation knowledge graph in Neo4j, using Temporal orchestration, PydanticAI agents (planner + answerer), Qwen 3 0.6B embeddings via Ollama, BM25 + vector hybrid retrieval fused via Reciprocal Rank Fusion, graph expansion over the existing schema, Cohere reranking, and OpenAI gpt-5.4-mini for generation, exposed via a Flask `POST /ask` endpoint.
 
-**Architecture:** Two long-lived processes (Flask app + Temporal worker) sharing `.env`. Flask kicks off one Temporal workflow per question; the workflow runs plan → parallel hybrid retrieval (per sub-query) → RRF fusion (pure, in-workflow) → graph expansion → Cohere rerank → Gemini Flash generation, with a naive-hybrid fallback path when the planner or rerank fails. Every I/O step is a Temporal activity with its own retries; the workflow body is deterministic.
+**Architecture:** Two long-lived processes (Flask app + Temporal worker) sharing `.env`. Flask kicks off one Temporal workflow per question; the workflow runs plan â†’ parallel hybrid retrieval (per sub-query) â†’ RRF fusion (pure, in-workflow) â†’ graph expansion â†’ Cohere rerank â†’ OpenAI gpt-5.4-mini generation, with a naive-hybrid fallback path when the planner or rerank fails. Every I/O step is a Temporal activity with its own retries; the workflow body is deterministic.
 
-**Tech Stack:** Python 3.11+, Temporal Python SDK (`temporalio>=1.20`), PydanticAI (>=1.61, including its Google provider support), Pydantic v2, neo4j Python driver, openai SDK (pointed at Ollama), Cohere SDK, Flask 3, Logfire, pytest.
+**Tech Stack:** Python 3.11+, Temporal Python SDK (`temporalio>=1.20`), PydanticAI (>=1.61, including its OpenAI provider support), Pydantic v2, neo4j Python driver, openai SDK (pointed at Ollama for embeddings and OpenAI API for generation), Cohere SDK, Flask 3, Logfire, pytest.
 
 **Reference spec:** [`docs/superpowers/specs/2026-05-05-graphrag-qa-agent-design.md`](../specs/2026-05-05-graphrag-qa-agent-design.md)
 
@@ -33,7 +33,7 @@ Files are listed with their single responsibility. Tasks below produce them in t
 | `src/qa_agent/cypher/hydrate_nodes.cypher` | Fetch full node records by id list, regardless of label |
 | `src/qa_agent/retrieval/bm25.py` | BM25 leg: composes fulltext call + filter clause from a `SubQuery` |
 | `src/qa_agent/retrieval/vector.py` | Vector leg: embeds query, calls vector index per label |
-| `src/qa_agent/retrieval/fusion.py` | `rrf_fuse` — pure deterministic RRF over BM25/vector lists |
+| `src/qa_agent/retrieval/fusion.py` | `rrf_fuse` â€” pure deterministic RRF over BM25/vector lists |
 | `src/qa_agent/retrieval/expansion.py` | Pattern dispatch + per-pattern Cypher invocation, dedup, caps |
 | `src/qa_agent/retrieval/rerank.py` | Cohere SDK wrapper; truncates docs, returns top_k |
 | `src/qa_agent/agents/planner.py` | PydanticAI `Agent` returning `Plan` |
@@ -45,7 +45,7 @@ Files are listed with their single responsibility. Tasks below produce them in t
 | `src/qa_agent/activities/expand.py` | `expand_graph` activity |
 | `src/qa_agent/activities/rerank.py` | `rerank` activity |
 | `src/qa_agent/activities/generate.py` | `generate_answer` activity: render evidence, call answerer, validate citations, build `QAResponse` |
-| `src/qa_agent/workflows/qa.py` | `QAWorkflow` (the workflow body shown in spec §4.1) |
+| `src/qa_agent/workflows/qa.py` | `QAWorkflow` (the workflow body shown in spec Â§4.1) |
 | `src/qa_agent/worker.py` | Temporal worker entrypoint registering workflow + activities |
 | `src/qa_agent/starter.py` | CLI: `python -m qa_agent.starter "question"` |
 | `src/qa_agent/api.py` | Flask app: `POST /ask`, `GET /health` |
@@ -56,7 +56,7 @@ Files are listed with their single responsibility. Tasks below produce them in t
 | `tests/test_answerer_citations.py` | Citation regex extraction + validation |
 | `tests/test_workflow_replay.py` | Temporal replay test against a recorded happy-path history |
 | `tests/test_retrieval_smoke.py` | End-to-end against a real local Neo4j+Ollama, gated `-m integration` |
-| `tests/fixtures/eval_questions.yaml` | 5–10 hand-curated questions for v1 eval |
+| `tests/fixtures/eval_questions.yaml` | 5â€“10 hand-curated questions for v1 eval |
 
 ---
 
@@ -171,9 +171,9 @@ EMBEDDING_MODEL=dengcao/Qwen3-Embedding-0.6B:Q8_0
 COHERE_API_KEY=
 COHERE_RERANK_MODEL=rerank-v3.5
 
-# Gemini Flash
-GEMINI_API_KEY=changeme
-GEMINI_MODEL=gemini-2.5-flash
+# OpenAI gpt-5.4-mini
+OPENAI_API_KEY=changeme
+OPENAI_MODEL=gpt-5.4-mini
 
 # Retrieval knobs (optional; defaults applied if unset)
 BM25_TOP_K=50
@@ -186,15 +186,15 @@ RERANK_DOC_CHARS=1500
 
 - [x] **Step 2: Verify .env.example does not contain real secrets**
 
-Run: `grep -E "^(GEMINI_API_KEY|COHERE_API_KEY|NEO4J_PASSWORD)=" .env.example`
-Expected: `GEMINI_API_KEY` and `NEO4J_PASSWORD` have the value `changeme`; `COHERE_API_KEY` is blank. No real keys.
+Run: `grep -E "^(OPENAI_API_KEY|COHERE_API_KEY|NEO4J_PASSWORD)=" .env.example`
+Expected: `OPENAI_API_KEY` and `NEO4J_PASSWORD` have the value `changeme`; `COHERE_API_KEY` is blank. No real keys.
 
 - [x] **Step 3: Verify local .env has required key names**
 
 Run this without printing secret values:
 
 ```bash
-python -c "from dotenv import dotenv_values; required=['NEO4J_URI','NEO4J_USER','NEO4J_PASSWORD','TEMPORAL_HOST','TEMPORAL_NAMESPACE','QA_TASK_QUEUE','OLLAMA_BASE_URL','EMBEDDING_MODEL','GEMINI_API_KEY','GEMINI_MODEL']; env=dotenv_values('.env'); missing=[k for k in required if k not in env]; print('missing=' + (','.join(missing) if missing else 'none'))"
+python -c "from dotenv import dotenv_values; required=['NEO4J_URI','NEO4J_USER','NEO4J_PASSWORD','TEMPORAL_HOST','TEMPORAL_NAMESPACE','QA_TASK_QUEUE','OLLAMA_BASE_URL','EMBEDDING_MODEL','OPENAI_API_KEY','OPENAI_MODEL']; env=dotenv_values('.env'); missing=[k for k in required if k not in env]; print('missing=' + (','.join(missing) if missing else 'none'))"
 ```
 
 Expected: `missing=none`. `COHERE_API_KEY` may be absent or blank during development; rerank will fall back to RRF until it is set.
@@ -227,7 +227,7 @@ GraphRAG question-answering over the Claude Code documentation graph in Neo4j.
 - Local Ollama with a Qwen 3 0.6B embedding model that produces 1024-dim vectors.
 - A local Temporal server (`temporal server start-dev`).
 - A Cohere API key for reranking. This is optional during development; without it, the workflow uses RRF top-8 fallback.
-- A Gemini API key (Google AI Studio free tier is fine).
+- An OpenAI API key.
 
 ## Setup
 
@@ -305,7 +305,7 @@ git commit -m "docs: add README with setup and run instructions"
 
 **Files:**
 - Create: `src/qa_agent/__init__.py`
-- Move: `neo4j_client.py` → `src/qa_agent/neo4j_client.py`
+- Move: `neo4j_client.py` â†’ `src/qa_agent/neo4j_client.py`
 
 - [x] **Step 1: Create the package directory and __init__.py**
 
@@ -357,7 +357,7 @@ git commit -m "refactor: move neo4j_client.py into src/qa_agent/ package layout"
 
 ## Phase 1: Foundation modules
 
-### Task 1.1: config.py — settings via pydantic-settings
+### Task 1.1: config.py â€” settings via pydantic-settings
 
 **Files:**
 - Create: `src/qa_agent/config.py`
@@ -383,8 +383,8 @@ def test_settings_reads_required_fields(monkeypatch):
     monkeypatch.setenv("EMBEDDING_MODEL", "qwen3-embedding")
     monkeypatch.setenv("COHERE_API_KEY", "ck")
     monkeypatch.setenv("COHERE_RERANK_MODEL", "rerank-v3.5")
-    monkeypatch.setenv("GEMINI_API_KEY", "gk")
-    monkeypatch.setenv("GEMINI_MODEL", "gemini-2.5-flash")
+    monkeypatch.setenv("OPENAI_API_KEY", "gk")
+    monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
     get_settings.cache_clear()
     s = Settings()
     assert s.neo4j_uri == "neo4j://localhost:7687"
@@ -400,7 +400,7 @@ def test_get_settings_caches(monkeypatch):
     monkeypatch.setenv("NEO4J_PASSWORD", "pw")
     monkeypatch.setenv("OLLAMA_BASE_URL", "http://localhost:11434/v1")
     monkeypatch.setenv("EMBEDDING_MODEL", "x")
-    monkeypatch.setenv("GEMINI_API_KEY", "x")
+    monkeypatch.setenv("OPENAI_API_KEY", "x")
     get_settings.cache_clear()
     a = get_settings()
     b = get_settings()
@@ -443,9 +443,9 @@ class Settings(BaseSettings):
     cohere_api_key: str = ""
     cohere_rerank_model: str = "rerank-v3.5"
 
-    # Gemini
-    gemini_api_key: str
-    gemini_model: str = "gemini-2.5-flash"
+    # OpenAI
+    openai_api_key: str
+    openai_model: str = "gpt-5.4-mini"
 
     # Retrieval knobs
     bm25_top_k: int = Field(default=50, ge=1, le=500)
@@ -475,7 +475,7 @@ git commit -m "feat(config): add Settings via pydantic-settings"
 
 ---
 
-### Task 1.2: schemas.py — wire types
+### Task 1.2: schemas.py â€” wire types
 
 **Files:**
 - Create: `src/qa_agent/schemas.py`
@@ -702,7 +702,7 @@ git commit -m "feat(schemas): add wire types for retrieval, planning, response"
 
 ## Phase 2: Pure utilities (TDD)
 
-### Task 2.1: rrf_fuse — Reciprocal Rank Fusion
+### Task 2.1: rrf_fuse â€” Reciprocal Rank Fusion
 
 **Files:**
 - Create: `src/qa_agent/retrieval/fusion.py`
@@ -815,7 +815,7 @@ def rrf_fuse(
     top_n: int = 40,
 ) -> list[Candidate]:
     """
-    Fuse candidates across (sub_query × {bm25, vector}) ranked lists.
+    Fuse candidates across (sub_query Ã— {bm25, vector}) ranked lists.
 
     Each candidate accrues 1/(k+rank) per list it appears in. Final ranking is
     by accumulated rrf_score desc, with stable tie-break by node_id ascending.
@@ -915,7 +915,7 @@ def test_no_f_string_cypher_in_src():
 - [x] **Step 2: Run test, confirm it passes (no Cypher yet)**
 
 Run: `pytest tests/test_cypher_safety.py -v`
-Expected: PASS (vacuously — there's no Cypher in src yet).
+Expected: PASS (vacuously â€” there's no Cypher in src yet).
 
 - [x] **Step 3: Commit**
 
@@ -1381,7 +1381,7 @@ def test_load_cypher_missing_file_raises():
 
 Run: `pytest tests/test_neo4j_client.py -v`
 
-If FAIL: implement step 3. If PASS: continue (loader is already correct from Phase 0; only `run_cypher` helper is missing — add it anyway).
+If FAIL: implement step 3. If PASS: continue (loader is already correct from Phase 0; only `run_cypher` helper is missing â€” add it anyway).
 
 - [x] **Step 3: Replace neo4j_client.py with the extended version**
 
@@ -1448,7 +1448,7 @@ git commit -m "feat(neo4j): add run_cypher helper and FileNotFoundError on missi
 
 ---
 
-### Task 4.2: embeddings.py — Ollama OpenAI-compatible client
+### Task 4.2: embeddings.py â€” Ollama OpenAI-compatible client
 
 **Files:**
 - Create: `src/qa_agent/embeddings.py`
@@ -1470,7 +1470,7 @@ async def test_embed_one_returns_vector(monkeypatch):
     monkeypatch.setenv("EMBEDDING_MODEL", "qwen3-embedding")
     monkeypatch.setenv("NEO4J_URI", "x"); monkeypatch.setenv("NEO4J_USER", "x")
     monkeypatch.setenv("NEO4J_PASSWORD", "x"); monkeypatch.setenv("COHERE_API_KEY", "x")
-    monkeypatch.setenv("GEMINI_API_KEY", "x")
+    monkeypatch.setenv("OPENAI_API_KEY", "x")
 
     fake_response = MagicMock()
     fake_response.data = [MagicMock(embedding=[0.1] * 1024)]
@@ -1493,7 +1493,7 @@ async def test_embed_batch_returns_one_vector_per_input(monkeypatch):
     monkeypatch.setenv("EMBEDDING_MODEL", "qwen3-embedding")
     monkeypatch.setenv("NEO4J_URI", "x"); monkeypatch.setenv("NEO4J_USER", "x")
     monkeypatch.setenv("NEO4J_PASSWORD", "x"); monkeypatch.setenv("COHERE_API_KEY", "x")
-    monkeypatch.setenv("GEMINI_API_KEY", "x")
+    monkeypatch.setenv("OPENAI_API_KEY", "x")
 
     fake_response = MagicMock()
     fake_response.data = [MagicMock(embedding=[float(i)] * 4) for i in range(3)]
@@ -1989,7 +1989,7 @@ async def test_cohere_rerank_truncates_documents_and_reorders(monkeypatch):
     monkeypatch.setenv("COHERE_API_KEY", "fake")
     monkeypatch.setenv("NEO4J_URI", "x"); monkeypatch.setenv("NEO4J_USER", "x")
     monkeypatch.setenv("NEO4J_PASSWORD", "x"); monkeypatch.setenv("OLLAMA_BASE_URL", "x")
-    monkeypatch.setenv("EMBEDDING_MODEL", "x"); monkeypatch.setenv("GEMINI_API_KEY", "x")
+    monkeypatch.setenv("EMBEDDING_MODEL", "x"); monkeypatch.setenv("OPENAI_API_KEY", "x")
 
     cands = [_c("a", "A" * 3000), _c("b", "B" * 100), _c("c", "C" * 100)]
 
@@ -2106,7 +2106,7 @@ vector) search and optional graph expansion.
 
 - Section: a section of a documentation page (most general; carries text + breadcrumb).
 - Chunk: a paragraph-sized slice of a Section (for fine-grained retrieval inside long sections).
-- CodeBlock: a code example. Has a `language` field — use the `language` filter to constrain.
+- CodeBlock: a code example. Has a `language` field â€” use the `language` filter to constrain.
 - TableRow: a row from a documentation table (e.g. settings tables, command flag tables).
 - Callout: an inline note/warning/tip block.
 - Tool: a Claude Code tool definition (Bash, Read, Edit, etc.).
@@ -2121,7 +2121,7 @@ vector) search and optional graph expansion.
 - language: language tag for CodeBlock (e.g. "python", "bash", "typescript").
 - page_path_prefix: restrict to a path prefix on Page (e.g. "settings/").
 
-Other filter keys are silently dropped — only emit `language` and `page_path_prefix`.
+Other filter keys are silently dropped â€” only emit `language` and `page_path_prefix`.
 
 # Graph expansion patterns
 
@@ -2236,7 +2236,7 @@ from qa_agent.schemas import Plan
 
 @pytest.mark.asyncio
 async def test_planner_returns_valid_plan_with_test_model(monkeypatch):
-    monkeypatch.setenv("GEMINI_API_KEY", "x"); monkeypatch.setenv("GEMINI_MODEL", "gemini-2.5-flash")
+    monkeypatch.setenv("OPENAI_API_KEY", "x"); monkeypatch.setenv("OPENAI_MODEL", "gpt-5.4-mini")
     monkeypatch.setenv("NEO4J_URI", "x"); monkeypatch.setenv("NEO4J_USER", "x")
     monkeypatch.setenv("NEO4J_PASSWORD", "x"); monkeypatch.setenv("OLLAMA_BASE_URL", "x")
     monkeypatch.setenv("EMBEDDING_MODEL", "x"); monkeypatch.setenv("COHERE_API_KEY", "x")
@@ -2280,12 +2280,12 @@ def build_planner_agent(model: object | None = None) -> Agent[None, Plan]:
 
     Args:
         model: optional override (e.g. TestModel for tests). When None, uses
-        Gemini Flash via the GEMINI_API_KEY env.
+        OpenAI gpt-5.4-mini via the OPENAI_API_KEY env.
     """
     if model is None:
         s = get_settings()
-        # PydanticAI accepts "google-gla:<model_id>" with GEMINI_API_KEY in env.
-        model = f"google-gla:{s.gemini_model}"
+        # PydanticAI accepts OpenAI model ids with OPENAI_API_KEY in env.
+        model = f"openai:{s.openai_model}"
     return Agent(
         model=model,
         output_type=Plan,
@@ -2478,7 +2478,7 @@ def validate_citations(
 def build_answerer_agent(model: object | None = None) -> Agent[None, AnswerWithCitations]:
     if model is None:
         s = get_settings()
-        model = f"google-gla:{s.gemini_model}"
+        model = f"openai:{s.openai_model}"
     return Agent(
         model=model,
         output_type=AnswerWithCitations,
@@ -2516,7 +2516,7 @@ git commit -m "feat(agents): add answerer agent with citation extraction and val
 
 ## Phase 6: Activities
 
-### Task 6.1: activities/plan.py — plan_query
+### Task 6.1: activities/plan.py â€” plan_query
 
 **Files:**
 - Create: `src/qa_agent/activities/plan.py`
@@ -2564,7 +2564,7 @@ git commit -m "feat(activities): add plan_query activity wrapping planner agent"
 
 ---
 
-### Task 6.2: activities/retrieve.py — hybrid_search + naive_hybrid_fallback
+### Task 6.2: activities/retrieve.py â€” hybrid_search + naive_hybrid_fallback
 
 **Files:**
 - Create: `src/qa_agent/activities/retrieve.py`
@@ -2801,7 +2801,7 @@ async def rerank(req: RerankRequest) -> list[Candidate]:
             msg = str(e)
             # Treat 4xx (auth/quota) as non-retryable so the workflow can fall back.
             if any(token in msg for token in ("401", "403", "429", "InvalidApiKey", "Unauthorized")):
-                logfire.warn("Cohere 4xx — non-retryable", error=msg)
+                logfire.warn("Cohere 4xx â€” non-retryable", error=msg)
                 raise ApplicationError(
                     f"Cohere rerank refused: {msg}",
                     non_retryable=True,
@@ -2872,7 +2872,7 @@ async def generate_answer(req: GenerateRequest) -> QAResponse:
             result.answer, evidence_count=len(req.evidence), used_ids=result.used_citation_ids,
         )
         if not ok:
-            logfire.warn("answer citation mismatch — accepting and trimming",
+            logfire.warn("answer citation mismatch â€” accepting and trimming",
                          missing=missing, out_of_range=out_of_range)
 
         used_in_text = extract_citation_ids(result.answer)
@@ -2915,8 +2915,8 @@ git commit -m "feat(activities): add generate_answer with citation validation"
 `src/qa_agent/workflows/qa.py`:
 
 ```python
-"""QAWorkflow — orchestrates plan → hybrid retrieval → fusion → expansion →
-rerank → generate, with planner-failure and empty-results fallbacks."""
+"""QAWorkflow â€” orchestrates plan â†’ hybrid retrieval â†’ fusion â†’ expansion â†’
+rerank â†’ generate, with planner-failure and empty-results fallbacks."""
 from __future__ import annotations
 import asyncio
 from datetime import timedelta
@@ -3014,7 +3014,7 @@ class QAWorkflow:
             retry_policy=_DEFAULT_RETRY,
         )
 
-        # 5. Cohere rerank → top 8 (with non-retryable graceful degradation)
+        # 5. Cohere rerank â†’ top 8 (with non-retryable graceful degradation)
         rerank_failed = False
         try:
             top = await workflow.execute_activity(
@@ -3258,7 +3258,7 @@ git commit -m "feat(worker): add Temporal worker entrypoint"
 
 ---
 
-### Task 8.2: starter.py — CLI
+### Task 8.2: starter.py â€” CLI
 
 **Files:**
 - Create: `src/qa_agent/starter.py`
@@ -3349,7 +3349,7 @@ def client(monkeypatch):
     monkeypatch.setenv("NEO4J_URI", "x"); monkeypatch.setenv("NEO4J_USER", "x")
     monkeypatch.setenv("NEO4J_PASSWORD", "x"); monkeypatch.setenv("OLLAMA_BASE_URL", "x")
     monkeypatch.setenv("EMBEDDING_MODEL", "x"); monkeypatch.setenv("COHERE_API_KEY", "x")
-    monkeypatch.setenv("GEMINI_API_KEY", "x")
+    monkeypatch.setenv("OPENAI_API_KEY", "x")
     from qa_agent.config import get_settings
     get_settings.cache_clear()
     app = create_app()
@@ -3493,7 +3493,7 @@ MATCH (s:Section) WHERE s.text CONTAINS 'permission mode' RETURN s.id LIMIT 5;
 
 ```yaml
 # Eval set for the Q&A Agent. Each question lists node ids that SHOULD appear
-# in the reranked top-8. Recall@8 ≥ 1 is the assertion.
+# in the reranked top-8. Recall@8 â‰¥ 1 is the assertion.
 #
 # Replace `expected_ids` placeholders with real ids from your local graph.
 # Find them with simple Cypher like:
@@ -3562,7 +3562,7 @@ git commit -m "test(eval): add hand-curated eval question set"
 `tests/test_retrieval_smoke.py`:
 
 ```python
-"""End-to-end smoke test against a real local Neo4j + Ollama + Cohere + Gemini.
+"""End-to-end smoke test against a real local Neo4j + Ollama + Cohere + OpenAI.
 
 Skipped unless `pytest -m integration` is used. Reads tests/fixtures/eval_questions.yaml.
 """
@@ -3639,7 +3639,7 @@ git commit -m "test(smoke): add integration-marked recall@8 smoke against eval s
 
 ### Task 10.3: Pilot run + report
 
-**Files:** none new — this is operational verification.
+**Files:** none new â€” this is operational verification.
 
 - [x] **Step 1: Start dependencies**
 
@@ -3660,7 +3660,7 @@ neo4j console      # or your existing Neo4j launcher
 - [x] **Step 2: Verify env**
 
 ```bash
-python -c "from qa_agent.config import get_settings; s = get_settings(); print('ok', s.embedding_model, s.cohere_rerank_model, s.gemini_model)"
+python -c "from qa_agent.config import get_settings; s = get_settings(); print('ok', s.embedding_model, s.cohere_rerank_model, s.openai_model)"
 ```
 
 Expected: prints `ok` plus the three model names. If it raises, fix the missing env var.
@@ -3672,7 +3672,7 @@ python -m qa_agent.worker          # Terminal 4
 python -m qa_agent.starter "How do I configure the Bash tool's permission mode?"   # Terminal 5
 ```
 
-Expected: JSON response with `answer`, `citations` (≥1), and `latency_ms` populated. `fallback_used: false`, `no_results: false`.
+Expected: JSON response with `answer`, `citations` (â‰¥1), and `latency_ms` populated. `fallback_used: false`, `no_results: false`.
 
 - [x] **Step 4: Run a question that should hit the empty path**
 
@@ -3695,11 +3695,11 @@ Expected: at least one citation whose `node_label` is `CodeBlock`.
 Open `http://localhost:8233`. Confirm:
 - Each `QAWorkflow` execution completed.
 - Activity timings are reasonable (no single activity > 10s under normal load).
-- No retries on the happy path; retries on transient Cohere/Gemini failures resolved within attempts.
+- No retries on the happy path; retries on transient Cohere/OpenAI failures resolved within attempts.
 
 - [x] **Step 7: Commit any tuning changes from observation**
 
-If the pilot reveals an obvious tuning gap (e.g. `RERANK_TOP_K=8` is too small / too large for the kind of answers Gemini produces), adjust `.env` and/or `config.py` defaults and commit. If not, no commit needed.
+If the pilot reveals an obvious tuning gap (e.g. `RERANK_TOP_K=8` is too small / too large for the kind of answers OpenAI produces), adjust `.env` and/or `config.py` defaults and commit. If not, no commit needed.
 
 ```bash
 # only if changes made
@@ -3711,4 +3711,5 @@ git commit -m "tune: adjust retrieval knobs based on pilot results"
 
 ## End of plan
 
-The agent is now end-to-end runnable. Next steps beyond v1 are tracked in spec §2 (non-goals) and §14 (open items / risks).
+The agent is now end-to-end runnable. Next steps beyond v1 are tracked in spec Â§2 (non-goals) and Â§14 (open items / risks).
+

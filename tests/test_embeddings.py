@@ -11,7 +11,7 @@ def _set_required_env(monkeypatch):
     monkeypatch.setenv("NEO4J_URI", "x")
     monkeypatch.setenv("NEO4J_USER", "x")
     monkeypatch.setenv("NEO4J_PASSWORD", "x")
-    monkeypatch.setenv("GEMINI_API_KEY", "x")
+    monkeypatch.setenv("OPENAI_API_KEY", "x")
 
 
 @pytest.mark.asyncio

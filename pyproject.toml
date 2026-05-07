@@ -26,6 +26,11 @@ dev = [
     "pytest-mock>=3.14.0",
     "ruff>=0.6.0",
 ]
+eval = [
+    "ragas>=0.4.3,<0.5",
+    "pandas>=2.2,<4",
+    "tabulate>=0.9,<1",
+]
 
 [build-system]
 requires = ["setuptools>=68"]

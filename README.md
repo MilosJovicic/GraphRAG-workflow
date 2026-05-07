@@ -9,7 +9,7 @@ GraphRAG question-answering over the Claude Code documentation graph in Neo4j.
 - Local Ollama with a Qwen 3 0.6B embedding model that produces 1024-dim vectors.
 - A local Temporal server (`temporal server start-dev`).
 - A Cohere API key for reranking. This is optional during development; without it, the workflow uses RRF top-8 fallback.
-- A Gemini API key (Google AI Studio free tier is fine).
+- An OpenAI API key for the planner, answerer, and RAGAS judge.
 
 ## Setup
 

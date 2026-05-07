@@ -34,6 +34,10 @@ htmlcov/
 # Logs
 *.log
 
+# Eval run artifacts
+ragas_evals/results/
+.tmp_temporal.db
+
 # OS
 .DS_Store
 Thumbs.db
