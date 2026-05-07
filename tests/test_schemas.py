@@ -59,6 +59,21 @@ def test_expansion_pattern_max_per_seed_rejects_9():
         ExpansionPattern(name="code_examples", max_per_seed=9)
 
 
+def test_expansion_pattern_language_default_is_none():
+    pattern = ExpansionPattern(name="code_examples")
+    assert pattern.language is None
+
+
+def test_expansion_pattern_language_round_trip():
+    pattern = ExpansionPattern(
+        name="code_examples", max_per_seed=6, language="python"
+    )
+    assert pattern.language == "python"
+    dumped = pattern.model_dump()
+    rehydrated = ExpansionPattern.model_validate(dumped)
+    assert rehydrated.language == "python"
+
+
 def test_qa_request_min_length():
     with pytest.raises(ValidationError):
         QARequest(question="")

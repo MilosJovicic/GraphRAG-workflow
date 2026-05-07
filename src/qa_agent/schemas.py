@@ -66,6 +66,7 @@ class SubQuery(BaseModel):
 class ExpansionPattern(BaseModel):
     name: ExpansionName
     max_per_seed: int = Field(default=3, ge=1, le=8)
+    language: str | None = None
 
 
 class Plan(BaseModel):
