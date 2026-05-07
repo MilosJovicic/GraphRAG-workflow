@@ -30,3 +30,7 @@ dist/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Chainlit runtime config (auto-generated on import)
+**/.chainlit/
+chainlit.md
