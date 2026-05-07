@@ -32,6 +32,7 @@ async def rerank(req: RerankRequest) -> list[Candidate]:
                 candidates=req.candidates,
                 top_k=req.top_k,
                 doc_chars=settings.rerank_doc_chars,
+                entity_budget=settings.rerank_entity_budget,
             )
         except Exception as exc:
             message = str(exc)

@@ -25,9 +25,9 @@ class Settings(BaseSettings):
     cohere_api_key: str = ""
     cohere_rerank_model: str = "rerank-v3.5"
 
-    # Gemini
-    gemini_api_key: str
-    gemini_model: str = "gemini-2.5-flash"
+    # OpenAI planner + answerer
+    openai_api_key: str
+    openai_model: str = "gpt-5.4-mini"
 
     # Retrieval knobs
     bm25_top_k: int = Field(default=50, ge=1, le=500)
@@ -36,6 +36,7 @@ class Settings(BaseSettings):
     max_expansion_total: int = Field(default=20, ge=0, le=100)
     rerank_top_k: int = Field(default=8, ge=1, le=50)
     rerank_doc_chars: int = Field(default=1500, ge=200, le=8000)
+    rerank_entity_budget: int = Field(default=2, ge=0, le=8)
 
 
 @lru_cache
