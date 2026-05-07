@@ -1,4 +1,4 @@
-FROM neo4j:5-community
+FROM neo4j:2026.04-enterprise
 
 USER root
 RUN apt-get update && apt-get install -y --no-install-recommends \

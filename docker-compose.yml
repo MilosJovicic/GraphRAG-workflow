@@ -54,9 +54,19 @@ services:
     restart: "no"
 
   neo4j:
-    image: neo4j:5-community
+    # Enterprise edition is required because the published dump uses the
+    # block storage format, which is Enterprise-only. NEO4J_ACCEPT_LICENSE
+    # _AGREEMENT=eval accepts the 30-day evaluation license, which is
+    # appropriate for the local-only intent of this stack.
+    image: neo4j:2026.04-enterprise
     environment:
       NEO4J_AUTH: neo4j/${NEO4J_PASSWORD}
+      NEO4J_ACCEPT_LICENSE_AGREEMENT: eval
+      # The published dump carries its own auth state, including any
+      # rate-limiter lockouts. For this local-only stack we disable
+      # auth entirely so bring-up is deterministic; bolt connections
+      # from qa-api/qa-worker accept any user/password.
+      NEO4J_dbms_security_auth__enabled: "false"
       NEO4J_server_memory_pagecache_size: 512M
       NEO4J_server_memory_heap_initial__size: 512M
       NEO4J_server_memory_heap_max__size: 1G
@@ -69,9 +79,13 @@ services:
       neo4j-seed:
         condition: service_completed_successfully
     healthcheck:
-      test: ["CMD-SHELL", "cypher-shell -u neo4j -p $${NEO4J_PASSWORD} 'RETURN 1' || exit 1"]
+      # Use the unauthenticated HTTP discovery endpoint instead of
+      # cypher-shell. Cypher-based healthchecks count against Neo4j's
+      # built-in failed-auth rate limiter and can lock out the neo4j
+      # user during startup or when the password env is wrong.
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:7474 || exit 1"]
       interval: 10s
-      timeout: 10s
+      timeout: 5s
       retries: 30
       start_period: 30s
 

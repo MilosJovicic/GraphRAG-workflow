@@ -3,7 +3,11 @@ set -euo pipefail
 
 DATA_DIR="${DATA_DIR:-/data}"
 MARKER="${DATA_DIR}/.seeded"
-DUMP_PATH="/tmp/graph.dump"
+# neo4j-admin load names archives by database name: --from-path=DIR loads
+# DIR/<dbname>.dump. We're loading into the default 'neo4j' database, so the
+# file on disk must be /tmp/neo4j.dump regardless of what the source URL
+# called it.
+DUMP_PATH="/tmp/neo4j.dump"
 
 if [ -f "$MARKER" ]; then
   echo "[neo4j-seed] Volume already seeded at ${MARKER}, skipping."
