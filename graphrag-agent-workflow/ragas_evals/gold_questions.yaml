@@ -1,0 +1,115 @@
+# Gold eval set for the Claude Code docs GraphRAG Q&A agent.
+# expected_context_ids are gold slots that should appear in the retrieved top
+# evidence for the question. Each slot is either a single string (one
+# acceptable id) or a list of strings (any-of: any one of the listed ids
+# satisfies the slot). Acceptable alternates are typically an entity node
+# (Tool:Bash, SettingKey:permissions, ...) and the canonical Section URL that
+# documents the same concept.
+
+- id: q1
+  category: permissions
+  question: "How do I configure the Bash tool's permission mode?"
+  reference_answer: >-
+    Configure the Bash tool's permission mode through the `permissions` setting
+    and the `permissionMode` value in Claude Code. Tool permission rules allow
+    or deny `Bash`, and `permissionMode` selects how Claude Code handles tool
+    actions: `default` prompts before tool actions, `acceptEdits` accepts file
+    edits without prompting, `bypassPermissions` skips all permission prompts,
+    and `plan` runs without making changes.
+  expected_context_ids:
+    - - "https://code.claude.com/docs/en/agent-sdk/agent-loop.md#permission-mode"
+      - "https://code.claude.com/docs/en/agent-sdk/permissions.md#set-permission-mode"
+    - - "Tool:Bash"
+      - "https://code.claude.com/docs/en/permissions.md#bash"
+    - "SettingKey:permissions"
+
+- id: q2
+  category: hooks
+  question: "What hook events are available and when do they fire?"
+  reference_answer: >-
+    Claude Code hook events fire at defined moments in the agent lifecycle.
+    The events include `PreToolUse` before a tool call (which can block it),
+    `PostToolUse` after a successful tool call, `PostToolUseFailure` after a
+    failed tool call, `UserPromptSubmit` when the user submits a prompt,
+    `SessionStart` and `SessionEnd` around a session, `Notification`, `Stop`,
+    `SubagentStop`, and `PreCompact`.
+  expected_context_ids:
+    - "Hook:PostToolUse"
+    - "Hook:PostToolUseFailure"
+    - "https://code.claude.com/docs/en/hooks-guide.md#how-hooks-work"
+
+- id: q3
+  category: tools
+  question: "Show me a Python example of using the Edit tool."
+  reference_answer: >-
+    Use the Edit tool from the Claude Agent SDK in Python by including `Edit`
+    in `allowed_tools` on `ClaudeAgentOptions`. Setting
+    `permission_mode='acceptEdits'` lets the agent apply edits without
+    prompting. The Edit tool replaces an exact `old_string` with a
+    `new_string` at a given file path.
+  # The first slot accepts the canonical Python SDK Edit section. The
+  # remaining hex IDs are Python codeblocks verified in 2026-05 that show
+  # Edit usage: dd7564204c2946d7 (allowed_tools=["Read","Edit",...]
+  # quickstart) and 5f644bc9ef3abd5f (Edit + acceptEdits permission_mode).
+  expected_context_ids:
+    - "https://code.claude.com/docs/en/agent-sdk/python.md#edit"
+    - - "dd7564204c2946d7"
+      - "5f644bc9ef3abd5f"
+
+- id: q4
+  category: permissions
+  question: "Compare bypassPermissions and acceptEdits permission modes."
+  reference_answer: >-
+    `acceptEdits` accepts file edits automatically while still prompting for
+    other tool actions. `bypassPermissions` skips all permission checks,
+    including those for tool actions and edits, and should be used only in
+    trusted, sandboxed environments. The two modes differ in scope:
+    `acceptEdits` only suppresses prompts for file edits, while
+    `bypassPermissions` skips every permission check.
+  expected_context_ids:
+    - - "PermissionMode:acceptEdits"
+      - "https://code.claude.com/docs/en/permission-modes.md#accept-file-edits-with-acceptedits-mode"
+    - - "PermissionMode:bypassPermissions"
+      - "https://code.claude.com/docs/en/permission-modes.md#skip-all-checks-with-bypasspermissions-mode"
+    - "b004dfe980236079"
+    - "03b336186e9429aa"
+
+- id: q5
+  category: hooks
+  question: "What's the difference between PreToolUse and PostToolUse hooks?"
+  reference_answer: >-
+    `PreToolUse` runs before a tool call executes and can inspect or block the
+    call. `PostToolUse` runs after a tool call succeeds and receives the
+    tool's output, supporting follow-up actions such as logging or formatting.
+    There is also `PostToolUseFailure`, which runs after a failed tool call.
+  expected_context_ids:
+    - "Hook:PostToolUse"
+    - "https://code.claude.com/docs/en/hooks-guide.md#how-hooks-work"
+    - "fe63b1559569833c"
+
+- id: q6
+  category: configuration
+  question: "How do I set the model for a specific session?"
+  reference_answer: >-
+    Set the model for a Claude Code session through the `model` setting in
+    `settings.json` or by running the `/model` slash command in the current
+    session. The `model` setting selects the default model;
+    `availableModels` controls which models can be selected via the slash
+    command.
+  expected_context_ids:
+    - - "SettingKey:model"
+      - "https://code.claude.com/docs/en/model-config.md#setting-your-model"
+    - "SettingKey:availableModels"
+    - "https://code.claude.com/docs/en/commands.md#overview"
+
+- id: q7
+  category: providers
+  question: "What providers does Claude Code support?"
+  reference_answer: >-
+    Claude Code supports the Anthropic API directly and can be configured to
+    use Amazon Bedrock (`bedrock`) or Google Vertex AI (`vertex-ai`). The
+    choice of API provider is documented in the admin setup guide.
+  expected_context_ids:
+    - "Provider:bedrock"
+    - "Provider:vertex-ai"
+    - "https://code.claude.com/docs/en/admin-setup.md#choose-your-api-provider"
