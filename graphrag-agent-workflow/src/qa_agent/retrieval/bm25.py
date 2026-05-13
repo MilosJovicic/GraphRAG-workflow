@@ -7,6 +7,7 @@ from qa_agent.schemas import Candidate, SubQuery
 
 SEARCHABLE_LABELS = {"Section", "Chunk", "CodeBlock", "TableRow", "Callout"}
 ALLOWED_FILTERS = {"language", "page_path_prefix"}
+LUCENE_SPECIAL_CHARS = frozenset('+-&|!(){}[]^"~*?:\\/')
 
 
 def _template_for(label: str) -> str:
@@ -17,7 +18,14 @@ def _build_query_string(sq: SubQuery) -> str:
     parts = [sq.text.strip()]
     if sq.bm25_keywords:
         parts.append(" ".join(sq.bm25_keywords))
-    return " ".join(part for part in parts if part)
+    query = " ".join(part for part in parts if part)
+    return _escape_lucene_query(query)
+
+
+def _escape_lucene_query(query: str) -> str:
+    return "".join(
+        f"\\{char}" if char in LUCENE_SPECIAL_CHARS else char for char in query
+    )
 
 
 def _build_filter_params(filters: dict[str, str]) -> dict[str, str | None]:
