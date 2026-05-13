@@ -70,3 +70,23 @@ async def test_bm25_search_drops_unknown_filter_keys():
     params = args[1]
     assert params.get("language") == "python"
     assert "bogus" not in params
+
+
+@pytest.mark.asyncio
+async def test_bm25_search_escapes_lucene_special_characters():
+    sq = SubQuery(
+        text="Claude Code slash command clear conversation",
+        target_labels=["Section"],
+        bm25_keywords=["/clear", "conversation", "clear"],
+    )
+
+    with patch(
+        "qa_agent.retrieval.bm25.run_cypher",
+        new=AsyncMock(return_value=[]),
+    ) as mocked_run:
+        await bm25_search(sq, label="Section", limit=50)
+
+    args, _ = mocked_run.call_args
+    query = args[1]["query"]
+    assert r"\/clear" in query
+    assert " /clear" not in query
